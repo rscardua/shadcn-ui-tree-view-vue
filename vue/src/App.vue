@@ -27,15 +27,12 @@ const customIconMap = {
 }
 
 function getCheckedItems(items: TreeViewItem[]): TreeViewItem[] {
-  let checkedItems: TreeViewItem[] = []
-  items.forEach((item) => {
-    if (item.checked) {
-      checkedItems.push(item)
-    } else if (item.children) {
-      checkedItems = [...checkedItems, ...getCheckedItems(item.children)]
-    }
-  })
-  return checkedItems
+  const result: TreeViewItem[] = []
+  for (const item of items) {
+    if (item.checked) result.push(item)
+    if (item.children) result.push(...getCheckedItems(item.children))
+  }
+  return result
 }
 
 function handleCheckChange(item: TreeViewItem, checked: boolean) {
