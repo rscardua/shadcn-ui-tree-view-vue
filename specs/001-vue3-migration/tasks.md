@@ -184,6 +184,18 @@
 
 ---
 
+## Phase 11: Visual Bug Fixes — Element Overlap
+
+**Purpose**: Fix layout and rendering issues causing tree elements to visually overlap each other
+
+- [x] T045 [P] Fix horizontal overflow: replace `w-[600px]` with `w-full` on the inner container in `vue/src/components/tree-view/TreeView.vue` so the component fills its parent without escaping the `flex` column in `App.vue`
+- [x] T046 [P] Fix App.vue left-panel constraint: replace `max-w-[450px]` with `min-w-0 flex-1` on the left `<div class="flex flex-col gap-4 ...">` in `vue/src/App.vue` so the panel expands to accommodate the TreeView instead of letting it overflow into the right panel
+- [x] T047 [P] Remove inner trigger-only Collapsible wrapper in `vue/src/components/tree-view/TreeItem.vue`: the folder row currently wraps the chevron `<Button>` in a `<Collapsible>` that has no matching `<CollapsibleContent>`, causing `CollapsibleRoot` to render an extra block-level `div` inside the `flex items-center` row. Replace with a plain `<Button variant="ghost" size="icon" class="h-6 w-6" @click.stop="() => onToggle(item.id, !isOpen)">` and remove the surrounding `<Collapsible>` and `<CollapsibleTrigger>` wrappers
+- [x] T048 [P] Add `overflow-hidden` to the children group wrapper in `vue/src/components/tree-view/TreeItem.vue`: the `<div v-if="item.children" role="group">` container that holds `<CollapsibleContent>` has no overflow clipping, so during the collapse height animation children items can momentarily overflow and overlap adjacent rows. Add `class="overflow-hidden"` to that wrapper div
+- [x] T049 [P] Fix item row minimum height: change `h-8` to `min-h-8` on the `<div class="flex items-center h-8">` row element in both the folder and leaf branches of `vue/src/components/tree-view/TreeItem.vue` so items with longer names (e.g. "Conservation of Momentum") are not clipped and do not overflow into adjacent rows
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -198,6 +210,7 @@
 - **US6 Hover Cards (Phase 8)**: Depends on US1 (needs TreeItem structure)
 - **US7 Keyboard Nav (Phase 9)**: Depends on US1 + US2 (needs tree structure + selection handlers)
 - **Polish (Phase 10)**: Depends on all user stories being complete
+- **Visual Bug Fixes (Phase 11)**: Independent from Phase 10 — these fixes apply to already-implemented files and can run in parallel to any remaining polish work
 
 ### Parallel Opportunities After US1
 

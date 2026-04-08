@@ -394,7 +394,7 @@ function clearSelection() {
   <div class="flex gap-4">
     <div
       ref="treeRef"
-      class="bg-background p-6 rounded-xl border max-w-2xl space-y-4 w-[600px] relative shadow-lg"
+      class="bg-background p-6 rounded-xl border space-y-4 w-full relative shadow-lg"
     >
       <!-- Search bar / Selection bar -->
       <Transition mode="out-in" name="bar">

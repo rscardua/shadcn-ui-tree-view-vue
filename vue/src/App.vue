@@ -104,7 +104,7 @@ const menuItems: TreeViewMenuItem[] = [
     </div>
 
     <main class="w-full max-w-[1400px] px-8 flex flex-row gap-4 min-h-[600px]">
-      <div class="flex flex-col gap-4 max-w-[450px]">
+      <div class="flex flex-col gap-4 min-w-0 flex-1">
         <TreeView
           :data="treeData"
           :icon-map="customIconMap"

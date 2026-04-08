@@ -17,7 +17,7 @@ import {
   TREE_SHOW_CHECKBOXES,
 } from './keys'
 import { getCheckState, getItemPath, getSelectedChildrenCount, getVisibleItems } from './utils'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -141,22 +141,18 @@ function renderIcon() {
           :style="{ paddingLeft: `${depth * 20}px` }"
           @click="handleClick"
         >
-          <div class="flex items-center h-8">
+          <div class="flex items-center min-h-8">
             <!-- Folder item -->
             <template v-if="item.children">
               <div class="flex items-center gap-2 flex-1 group">
-                <Collapsible :open="isOpen" @update:open="(open: boolean) => onToggle(item.id, open)">
-                  <CollapsibleTrigger as-child @click.stop>
-                    <Button variant="ghost" size="icon" class="h-6 w-6">
-                      <div
-                        class="transition-transform duration-100"
-                        :class="isOpen ? 'rotate-90' : 'rotate-0'"
-                      >
-                        <ChevronRight class="h-4 w-4" />
-                      </div>
-                    </Button>
-                  </CollapsibleTrigger>
-                </Collapsible>
+                <Button variant="ghost" size="icon" class="h-6 w-6" @click.stop="() => onToggle(item.id, !isOpen)">
+                  <div
+                    class="transition-transform duration-100"
+                    :class="isOpen ? 'rotate-90' : 'rotate-0'"
+                  >
+                    <ChevronRight class="h-4 w-4" />
+                  </div>
+                </Button>
 
                 <!-- Checkbox -->
                 <div
@@ -273,7 +269,7 @@ function renderIcon() {
         </div>
 
         <!-- Children (collapsible) -->
-        <div v-if="item.children" role="group">
+        <div v-if="item.children" role="group" class="overflow-hidden">
           <Collapsible :open="isOpen" @update:open="(open: boolean) => onToggle(item.id, open)">
             <CollapsibleContent>
               <!-- @vue-ignore -->
