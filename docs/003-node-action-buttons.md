@@ -323,7 +323,7 @@ const nodeActions: TreeViewNodeActionsMap = {
 ## Estrutura de Arquivos
 
 ```text
-vue/src/
+src/
   components/
     tree-view/
       TreeView.vue        # Prop nodeActions, emit node-action, provide

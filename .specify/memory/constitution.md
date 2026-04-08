@@ -102,9 +102,9 @@ or reduced in capability during migration.
   supplemented by CSS transitions or a Vue animation library if needed
 - **Icons**: Lucide Vue (replaces Lucide React)
 - **Package manager**: pnpm (carried over)
-- **Project location**: `vue/` directory at repository root with its
-  own `package.json`, `vite.config.ts`, and `tsconfig.json`,
-  and serves as the repository's sole interface codebase
+- **Project location**: Repository root with `package.json`,
+  `vite.config.ts`, and `tsconfig.json` at the top level,
+  serving as the repository's sole interface codebase
 
 Dependencies MUST be kept minimal. Every added dependency MUST
 directly serve a component feature — no utility-only or convenience
@@ -112,14 +112,15 @@ packages without clear justification.
 
 ## Development Workflow
 
-- **Coexistence**: Vue code lives under `vue/`. The React/Next.js
-  implementation has been retired (feature 002). There is no
-  coexistence requirement.
+- **Coexistence**: Vue code lives at the repository root. The
+  React/Next.js implementation has been retired (feature 002).
+  There is no coexistence requirement.
 - **Component structure**: Follow the shadcn/ui pattern —
   headless primitives composed into styled components, each in
   its own SFC file.
-- **Demo application**: A Vite + Vue 3 app (not Nuxt) under
-  `vue/` that showcases all tree view features with sample data.
+- **Demo application**: A Vite + Vue 3 app (not Nuxt) at the
+  repository root that showcases all tree view features with
+  sample data.
 - **Commits**: Each logical unit of work (single component,
   single feature area) MUST be committed independently.
 - **Quality gate**: Before a feature is considered complete,

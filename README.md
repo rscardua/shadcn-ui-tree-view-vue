@@ -25,7 +25,7 @@ Este repositorio nao publica um pacote npm. O fluxo recomendado e o mesmo do `sh
 
 ```bash
 git clone https://github.com/rscardua/shadcn-ui-tree-view-vue.git
-cd shadcn-ui-tree-view-vue/vue
+cd shadcn-ui-tree-view-vue
 pnpm install
 pnpm dev
 ```
@@ -43,10 +43,8 @@ Use este componente como os componentes do `shadcn-vue`: copie os arquivos fonte
 Forma recomendada:
 
 ```bash
-npx degit rscardua/shadcn-ui-tree-view-vue/vue/src/components/tree-view src/components/ui/tree-view
+npx degit rscardua/shadcn-ui-tree-view-vue/src/components/tree-view src/components/ui/tree-view
 ```
-
-Observacao: o subdiretorio correto no repositorio e `vue/src/components/tree-view`. O caminho sem `vue/` nao existe neste projeto.
 
 Se preferir, voce tambem pode copiar essa mesma pasta manualmente para o projeto de destino.
 
@@ -284,8 +282,9 @@ export interface TreeDragDropEvent {
 
 ## Scripts
 
+Todos os comandos sao executados a partir da raiz do repositorio:
+
 ```bash
-cd vue
 pnpm install
 pnpm dev
 pnpm build
@@ -295,8 +294,8 @@ pnpm type-check
 ## Contribuicao
 
 - Use o fluxo de planejamento em `specs/` para novas funcionalidades
-- Trabalhe dentro de `vue/` para codigo de produto e demo
-- Antes de abrir um PR, valide `cd vue && pnpm type-check` e `cd vue && pnpm build`
+- Trabalhe na raiz do repositorio para codigo de produto e demo
+- Antes de abrir um PR, valide `pnpm type-check` e `pnpm build`
 
 ## Creditos
 

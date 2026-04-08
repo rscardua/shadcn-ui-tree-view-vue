@@ -1,22 +1,49 @@
-# Vue workspace
-vue/node_modules/
-vue/dist/
-vue/.vite/
-node_modules/
-
-# Shared environment and build metadata
-.env*
-*.tsbuildinfo
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug logs
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-.pnpm-debug.log*
-node_modules/.vite/deps/_metadata.json
-node_modules/.vite/deps/package.json
+lerna-debug.log*
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# TypeScript build info
+*.tsbuildinfo
+
+.eslintcache
+
+# Shared environment
+.env*
+
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Vitest
+__screenshots__/
+
+# Vite
+*.timestamp-*-*.mjs
+.vite/
+
+# Misc
+*.pem
+Thumbs.db

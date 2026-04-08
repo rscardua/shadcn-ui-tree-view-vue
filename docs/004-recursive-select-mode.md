@@ -197,7 +197,7 @@ function handleCheckChange(item: TreeViewItem, checked: boolean) {
 ## Estrutura de Arquivos
 
 ```text
-vue/src/
+src/
   components/
     tree-view/
       TreeView.vue        # Prop recursiveSelect, provide reativo, handleCheckChange com propagacao
