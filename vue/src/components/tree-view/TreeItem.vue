@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 import type { TreeViewItem } from './types'
 import type { TreeViewNodeAction } from './types'
 import {
@@ -16,6 +16,7 @@ import {
   TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
+  TREE_RECURSIVE_SELECT,
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
@@ -63,6 +64,7 @@ const iconMap = inject(TREE_ICON_MAP, {})
 const menuItems = inject(TREE_MENU_ITEMS, [])
 const nodeActionsMap = inject(TREE_NODE_ACTIONS, {})
 const onNodeAction = inject(TREE_ON_NODE_ACTION, undefined)
+const recursiveSelectRef = inject(TREE_RECURSIVE_SELECT, ref(false))
 const iconSlot = inject(TREE_ICON_SLOT, null)
 const labelSlot = inject(TREE_LABEL_SLOT, null)
 
@@ -71,7 +73,13 @@ const isOpen = computed(() => expandedIds.value.has(props.item.id))
 const isSelected = computed(() => selectedIds.value.has(props.item.id))
 const isFocused = computed(() => focusedId.value === props.item.id)
 
-const checkState = computed(() => getCheckState(props.item, itemMap.value))
+const checkState = computed(() => {
+  if (recursiveSelectRef.value) {
+    return getCheckState(props.item, itemMap.value)
+  }
+  const originalItem = itemMap.value.get(props.item.id)
+  return originalItem?.checked ? 'checked' : 'unchecked'
+})
 
 const selectedCount = computed(() => {
   if (!props.item.children || isOpen.value) return null

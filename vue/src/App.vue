@@ -16,6 +16,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 const treeData = ref<TreeViewItem[]>(JSON.parse(JSON.stringify(demoData)))
 const showRecap = ref(false)
+const recursiveSelect = ref(false)
+const selectedItems = ref<TreeViewItem[]>([])
 
 const customIconMap = {
   region: Globe,
@@ -37,10 +39,18 @@ function getCheckedItems(items: TreeViewItem[]): TreeViewItem[] {
 }
 
 function handleCheckChange(item: TreeViewItem, checked: boolean) {
-  const updateCheckState = (treeItems: TreeViewItem[]): TreeViewItem[] => {
+  const updateAllChildren = (children: TreeViewItem[], checked: boolean): TreeViewItem[] => {
+    return children.map((child) => ({
+      ...child,
+      checked,
+      children: child.children ? updateAllChildren(child.children, checked) : undefined,
+    }))
+  }
+
+  const updateItem = (treeItems: TreeViewItem[]): TreeViewItem[] => {
     return treeItems.map((currentItem) => {
       if (currentItem.id === item.id) {
-        if (currentItem.children) {
+        if (recursiveSelect.value && currentItem.children) {
           return {
             ...currentItem,
             checked,
@@ -50,27 +60,23 @@ function handleCheckChange(item: TreeViewItem, checked: boolean) {
         return { ...currentItem, checked }
       }
       if (currentItem.children) {
-        return { ...currentItem, children: updateCheckState(currentItem.children) }
+        return { ...currentItem, children: updateItem(currentItem.children) }
       }
       return currentItem
     })
   }
 
-  const updateAllChildren = (children: TreeViewItem[], checked: boolean): TreeViewItem[] => {
-    return children.map((child) => ({
-      ...child,
-      checked,
-      children: child.children ? updateAllChildren(child.children, checked) : undefined,
-    }))
-  }
-
-  treeData.value = updateCheckState(treeData.value)
+  treeData.value = updateItem(treeData.value)
 }
 
 function handleAction(action: string, items: TreeViewItem[]) {
   if (action === 'add_to_shipment' && items.length > 0) {
     items.forEach((i) => handleCheckChange(i, true))
   }
+}
+
+function handleSelectionChange(items: TreeViewItem[]) {
+  selectedItems.value = items
 }
 
 const checkedItems = computed(() => getCheckedItems(treeData.value))
@@ -121,17 +127,39 @@ const menuItems: TreeViewMenuItem[] = [
 
     <main class="w-full max-w-[1400px] px-8 flex flex-row gap-4 min-h-[600px]">
       <div class="flex flex-col gap-4 min-w-0 flex-1">
+        <div class="bg-background rounded-xl border p-4 shadow-lg space-y-3">
+          <h2 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Options</h2>
+          <label class="flex items-center gap-3 text-sm font-medium cursor-pointer select-none">
+            <input
+              type="checkbox"
+              :checked="recursiveSelect"
+              class="rounded border-input h-4 w-4"
+              @change="recursiveSelect = ($event.target as HTMLInputElement).checked"
+            />
+            <div>
+              <div>Recursive Select</div>
+              <div class="text-xs text-muted-foreground font-normal">
+                {{ recursiveSelect
+                  ? 'Checking a parent automatically checks all descendants'
+                  : 'Each node is checked independently'
+                }}
+              </div>
+            </div>
+          </label>
+        </div>
+
         <TreeView
           :data="treeData"
           :icon-map="customIconMap"
           :show-checkboxes="true"
           :show-expand-all="true"
+          :recursive-select="recursiveSelect"
           :menu-items="menuItems"
           :node-actions="nodeActions"
           @check-change="handleCheckChange"
           @action="handleAction"
           @node-action="(actionId, item) => console.log('Node action:', actionId, 'on', item.name)"
-          @selection-change="(items) => {}"
+          @selection-change="handleSelectionChange"
         />
 
         <Button
@@ -144,11 +172,31 @@ const menuItems: TreeViewMenuItem[] = [
         </Button>
       </div>
 
-      <div class="flex-1 bg-background p-6 rounded-xl border max-h-[555px] shadow-lg">
-        <h2 class="text-xl font-semibold mb-4">Checked Items</h2>
-        <div class="border rounded-lg p-4 bg-card font-mono text-sm h-[calc(100%-4rem)]">
-          <pre v-if="checkedItems.length > 0" class="whitespace-pre-wrap break-all overflow-auto max-h-full">{{ JSON.stringify(checkedItems.map((item) => ({ ...item, children: undefined })), null, 2) }}</pre>
-          <div v-else class="text-muted-foreground">No items checked</div>
+      <div class="flex flex-col flex-1 gap-4">
+        <div class="bg-background p-6 rounded-xl border shadow-lg">
+          <h2 class="text-xl font-semibold mb-4">Selected Items</h2>
+          <div class="border rounded-lg p-4 bg-card font-mono text-sm max-h-[220px] overflow-auto">
+            <div v-if="selectedItems.length > 0" class="space-y-1">
+              <div
+                v-for="item in selectedItems"
+                :key="item.id"
+                class="flex items-center gap-2 py-0.5"
+              >
+                <component :is="customIconMap[item.type as keyof typeof customIconMap]" class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span class="truncate">{{ item.name }}</span>
+                <span class="text-xs text-muted-foreground ml-auto shrink-0">{{ item.type }}</span>
+              </div>
+            </div>
+            <div v-else class="text-muted-foreground">No items selected</div>
+          </div>
+        </div>
+
+        <div class="bg-background p-6 rounded-xl border shadow-lg flex-1">
+          <h2 class="text-xl font-semibold mb-4">Checked Items</h2>
+          <div class="border rounded-lg p-4 bg-card font-mono text-sm h-[calc(100%-4rem)]">
+            <pre v-if="checkedItems.length > 0" class="whitespace-pre-wrap break-all overflow-auto max-h-full">{{ JSON.stringify(checkedItems.map((item) => ({ ...item, children: undefined })), null, 2) }}</pre>
+            <div v-else class="text-muted-foreground">No items checked</div>
+          </div>
         </div>
       </div>
     </main>

@@ -1,6 +1,6 @@
 # Shadcn/ui Tree View (Vue)
 
-Componente Tree View em Vue 3 para interfaces administrativas, com busca, seleção avançada, checkboxes em cascata, menu de contexto e hover cards. Tecnologias principais: Vue 3, TypeScript, Reka UI e Tailwind CSS.
+Componente Tree View em Vue 3 para interfaces administrativas, com busca, seleção avançada, checkboxes com modo recursivo opcional, menu de contexto e hover cards. Tecnologias principais: Vue 3, TypeScript, Reka UI e Tailwind CSS.
 
 ## Captura / Demonstração
 
@@ -11,7 +11,7 @@ Componente Tree View em Vue 3 para interfaces administrativas, com busca, seleç
 - Renderização em árvore com expandir e recolher por nível
 - Seleção simples, múltipla, por intervalo e por arraste
 - Busca e filtro em tempo real
-- Checkboxes em cascata com sincronização entre pais e filhos
+- Checkboxes com modo recursivo opcional (marcar pai marca todos os descendentes)
 - Menus de contexto por item
 - Hover cards com metadados do item
 
@@ -58,20 +58,23 @@ pnpm add @lucide/vue class-variance-authority clsx reka-ui tailwind-merge tw-ani
 | `data` | `TreeViewItem[]` | obrigatório | Estrutura hierárquica exibida pelo componente. |
 | `title` | `string \| undefined` | `undefined` | Reservado para uso futuro. |
 | `showExpandAll` | `boolean` | `true` | Exibe os botões de expandir e recolher tudo. |
-| `showCheckboxes` | `boolean` | `false` | Habilita checkboxes com comportamento em cascata. |
+| `showCheckboxes` | `boolean` | `false` | Habilita checkboxes nos nós da árvore. |
+| `recursiveSelect` | `boolean` | `false` | Controla o modo de propagação dos checkboxes. Quando `false`, cada checkbox é independente — marcar/desmarcar um nó afeta apenas ele. Quando `true`, marcar/desmarcar um pai propaga para todos os descendentes, e o estado visual do pai reflete o estado agregado dos filhos (checked, unchecked ou indeterminado). |
 | `searchPlaceholder` | `string` | `"Search..."` | Texto exibido no campo de busca. |
 | `selectionText` | `string` | `"selected"` | Rótulo exibido ao lado da contagem de itens selecionados. |
 | `checkboxLabels` | `{ check: string; uncheck: string }` | `{ check: 'Check', uncheck: 'Uncheck' }` | Personaliza os botões de marcar e desmarcar na barra de seleção. |
 | `iconMap` | `TreeViewIconMap \| undefined` | `undefined` | Mapa opcional entre o tipo do item e o componente de ícone em Vue. |
 | `menuItems` | `TreeViewMenuItem[] \| undefined` | `undefined` | Ações exibidas no menu de contexto. |
+| `nodeActions` | `TreeViewNodeActionsMap \| undefined` | `undefined` | Mapa de botões de ação por tipo de nó (aparecem no hover). |
 
 ### Eventos (`TreeViewEmits`)
 
 | Evento | Payload | Descrição |
 |--------|---------|-----------|
 | `selection-change` | `TreeViewItem[]` | Disparado quando a seleção muda. |
-| `check-change` | `TreeViewItem`, `boolean` | Disparado quando um checkbox muda de estado. |
+| `check-change` | `TreeViewItem`, `boolean` | Disparado quando um checkbox muda de estado. Com `recursiveSelect=true`, emitido para o pai e cada descendente individualmente. |
 | `action` | `string`, `TreeViewItem[]` | Disparado quando uma ação do menu de contexto é executada. |
+| `node-action` | `string`, `TreeViewItem` | Disparado quando um botão de ação de nó é clicado. |
 
 ### Slots (`TreeViewSlots`)
 
@@ -104,6 +107,8 @@ export type TreeViewIconMap = Record<string, Component | undefined>
 ```
 
 ## Exemplo de uso
+
+### Uso basico
 
 ```vue
 <script setup lang="ts">
@@ -178,6 +183,46 @@ function onAction(action: string, items: TreeViewItem[]) {
       <span>{{ item.name }}</span>
     </template>
   </TreeView>
+</template>
+```
+
+### Checkbox recursivo
+
+A prop `recursive-select` controla como os checkboxes se comportam:
+
+- **`false` (padrao)**: cada checkbox e independente. Marcar ou desmarcar um no afeta apenas ele. O estado visual do checkbox reflete diretamente o campo `checked` do item, sem considerar os filhos.
+- **`true`**: marcar/desmarcar um pai propaga para todos os descendentes. O estado visual do pai e calculado a partir dos filhos (checked se todos marcados, indeterminado se parcial, unchecked se nenhum).
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import TreeView from '@/components/tree-view/TreeView.vue'
+import type { TreeViewItem } from '@/components/tree-view/types'
+
+const recursiveSelect = ref(false)
+const treeData = ref<TreeViewItem[]>([/* ... */])
+
+function handleCheckChange(item: TreeViewItem, checked: boolean) {
+  // Atualiza apenas o item recebido no evento.
+  // Com recursiveSelect=true, o TreeView emite check-change
+  // para o pai E cada descendente individualmente,
+  // entao esta funcao e chamada uma vez por no afetado.
+  const update = (items: TreeViewItem[]): TreeViewItem[] =>
+    items.map((i) => {
+      if (i.id === item.id) return { ...i, checked }
+      return i.children ? { ...i, children: update(i.children) } : i
+    })
+  treeData.value = update(treeData.value)
+}
+</script>
+
+<template>
+  <TreeView
+    :data="treeData"
+    :show-checkboxes="true"
+    :recursive-select="recursiveSelect"
+    @check-change="handleCheckChange"
+  />
 </template>
 ```
 

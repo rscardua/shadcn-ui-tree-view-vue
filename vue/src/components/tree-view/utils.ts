@@ -114,6 +114,59 @@ export function getVisibleItems(items: TreeViewItem[], expandedIds: Set<string>)
   return visible
 }
 
+export function getAllDescendantIds(item: TreeViewItem): string[] {
+  const ids: string[] = []
+  const collect = (children: TreeViewItem[]) => {
+    children.forEach((child) => {
+      ids.push(child.id)
+      if (child.children) collect(child.children)
+    })
+  }
+  if (item.children) collect(item.children)
+  return ids
+}
+
+export function findAncestors(itemId: string, data: TreeViewItem[]): TreeViewItem[] {
+  const path: TreeViewItem[] = []
+  const search = (items: TreeViewItem[]): boolean => {
+    for (const item of items) {
+      if (item.id === itemId) return true
+      if (item.children) {
+        path.push(item)
+        if (search(item.children)) return true
+        path.pop()
+      }
+    }
+    return false
+  }
+  search(data)
+  return path
+}
+
+export function getSelectionState(
+  item: TreeViewItem,
+  selectedIds: Set<string>,
+): 'selected' | 'unselected' | 'indeterminate' {
+  if (!item.children || item.children.length === 0) {
+    return selectedIds.has(item.id) ? 'selected' : 'unselected'
+  }
+
+  let selectedCount = 0
+  let indeterminateCount = 0
+
+  item.children.forEach((child) => {
+    const childState = getSelectionState(child, selectedIds)
+    if (childState === 'selected') selectedCount++
+    if (childState === 'indeterminate') indeterminateCount++
+  })
+
+  const totalChildren = item.children.length
+
+  if (selectedCount === totalChildren && selectedIds.has(item.id)) return 'selected'
+  if (selectedCount > 0 || indeterminateCount > 0 || selectedIds.has(item.id)) return 'indeterminate'
+  return 'unselected'
+}
+
 export function getCheckState(
   item: TreeViewItem,
   itemMap: Map<string, TreeViewItem>,

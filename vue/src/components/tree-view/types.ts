@@ -31,6 +31,7 @@ export interface TreeViewProps {
   title?: string
   showExpandAll?: boolean
   showCheckboxes?: boolean
+  recursiveSelect?: boolean
   searchPlaceholder?: string
   selectionText?: string
   checkboxLabels?: {

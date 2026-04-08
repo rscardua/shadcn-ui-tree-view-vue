@@ -15,6 +15,7 @@ import {
   TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
+  TREE_RECURSIVE_SELECT,
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils'
 const props = withDefaults(defineProps<TreeViewProps>(), {
   showExpandAll: true,
   showCheckboxes: false,
+  recursiveSelect: false,
   searchPlaceholder: 'Search...',
   selectionText: 'selected',
   checkboxLabels: () => ({ check: 'Check', uncheck: 'Uncheck' }),
@@ -379,6 +381,7 @@ provide(TREE_ON_SELECT, handleSelect)
 provide(TREE_ON_TOGGLE, handleToggleExpand)
 provide(TREE_ON_CHECK, handleCheckChange)
 provide(TREE_SHOW_CHECKBOXES, props.showCheckboxes)
+provide(TREE_RECURSIVE_SELECT, toRef(props, 'recursiveSelect'))
 provide(TREE_ICON_MAP, props.iconMap || {})
 provide(TREE_MENU_ITEMS, props.menuItems || [])
 provide(TREE_NODE_ACTIONS, props.nodeActions || {})
