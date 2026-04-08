@@ -4,8 +4,7 @@ Auto-generated from all feature plans. Last updated: 2026-04-08
 
 ## Active Technologies
 
-- TypeScript 5.x, Vue 3.5+, Vite, Reka UI, @lucide/vue, Tailwind CSS v4 (001-vue3-migration)
-- Markdown documentation for the Vue-only repository layout (002-vue-only-docs)
+- TypeScript 5.x (Vue project); Markdown (documentation) + Vue 3.5+, Vite, Reka UI, @lucide/vue, Tailwind CSS v4 (002-vue-only-docs)
 
 ## Project Structure
 
@@ -25,11 +24,11 @@ cd vue && pnpm type-check
 
 ## Code Style
 
-TypeScript 5.x, Vue 3.5+, Markdown: Follow standard conventions
+TypeScript 5.x (Vue project); Markdown (documentation): Follow standard conventions
 
 ## Recent Changes
 
-- 002-vue-only-docs: Removed the root React/Next.js project and rewrote root docs for a Vue-only workflow
+- 002-vue-only-docs: Removed the root React/Next.js project and aligned root documentation with the Vue-only workflow
 - 001-vue3-migration: Added the Vue 3 tree view implementation under `vue/`
 
 <!-- MANUAL ADDITIONS START -->

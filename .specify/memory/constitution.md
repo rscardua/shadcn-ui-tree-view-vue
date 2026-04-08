@@ -104,7 +104,7 @@ or reduced in capability during migration.
 - **Package manager**: pnpm (carried over)
 - **Project location**: `vue/` directory at repository root with its
   own `package.json`, `vite.config.ts`, and `tsconfig.json`,
-  independent from the existing React code
+  and serves as the repository's sole interface codebase
 
 Dependencies MUST be kept minimal. Every added dependency MUST
 directly serve a component feature — no utility-only or convenience
@@ -112,9 +112,9 @@ packages without clear justification.
 
 ## Development Workflow
 
-- **Coexistence**: The existing React/Next.js code MUST remain
-  untouched in its current location. Vue code lives exclusively
-  under `vue/`.
+- **Coexistence**: Vue code lives under `vue/`. The React/Next.js
+  implementation has been retired (feature 002). There is no
+  coexistence requirement.
 - **Component structure**: Follow the shadcn/ui pattern —
   headless primitives composed into styled components, each in
   its own SFC file.
@@ -141,4 +141,4 @@ MUST reference these principles.
   verify alignment with all five core principles before
   implementation begins.
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-08 | **Last Amended**: 2026-04-08
+**Version**: 2.0.0 | **Ratified**: 2026-04-08 | **Last Amended**: 2026-04-08
