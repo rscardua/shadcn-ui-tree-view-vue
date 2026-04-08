@@ -7,7 +7,7 @@
 
 **Organization**: Tasks are grouped by concern — diagnosis, core fix, visual fix, and validation.
 
-**Bug Context**: Bottom-up mode (`mode: 'bottom-up'`) is not propagating check state to ancestor nodes. When all children of a parent are checked, the parent should auto-check (FR-006, US3 acceptance scenario 1). The root cause is that `handleCheckChange` emits the clicked node's event synchronously before computing ancestor propagation, and the interleaved state mutations create timing inconsistencies.
+**Bug Context**: Bottom-up mode (`mode: 'bottom-up'`) still has a gap for intermediate nodes that are both child and parent. When a mid-level node is checked directly, its own checkbox updates, but its ancestors do not derive state from that node because the visual aggregation path ignores a folder's own `checked` flag once it has children.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -70,6 +70,15 @@
   2. `top-down`: check parent → parent + all descendants change
   3. `bottom-up`: check all children of Mechanics → Mechanics auto-checks; uncheck one child → Mechanics becomes indeterminate; check parent directly → only parent changes
   4. `recursive`: check parent → cascades down; uncheck child → parent becomes indeterminate; check all children → parent auto-checks
+
+---
+
+## Phase 6: Intermediate Node Bottom-Up Fix
+
+**Purpose**: Make directly checked mid-level nodes participate in bottom-up aggregation and keep keyboard toggling aligned with the rendered checkbox state
+
+- [x] T010 [US3] Add a mode-aware bottom-up check-state helper in `vue/src/components/tree-view/utils.ts` so directly checked intermediate nodes count as checked for ancestor aggregation while leaving descendants unchanged
+- [x] T011 [US3] Use the shared mode-aware check-state helper in `vue/src/components/tree-view/TreeItem.vue` and keyboard Space handling in `vue/src/components/tree-view/TreeView.vue` so visual state and keyboard toggling stay consistent for bottom-up mid-level nodes
 
 ---
 

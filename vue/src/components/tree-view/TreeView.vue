@@ -26,7 +26,7 @@ import {
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
-import { buildItemMap, filterTree, getAffectedAncestors, getAllFolderIds, getCheckState, getDescendants, getVisibleItems, moveNode } from './utils'
+import { buildItemMap, filterTree, getAffectedAncestors, getAllFolderIds, getDescendants, getModeCheckState, getVisibleItems, moveNode } from './utils'
 import { useTreeDragDrop } from './composables/useTreeDragDrop'
 import TreeItem from './TreeItem.vue'
 import { Button } from '@/components/ui/button'
@@ -411,7 +411,7 @@ function handleKeyDown(event: KeyboardEvent) {
     case ' ': {
       const item = currentIndex >= 0 ? visible[currentIndex] : null
       if (item && props.showCheckboxes) {
-        const state = getCheckState(item, itemMap.value)
+        const state = getModeCheckState(item, itemMap.value, props.mode ?? 'independent')
         handleCheckChange(item, state !== 'checked')
       }
       break

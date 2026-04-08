@@ -24,7 +24,7 @@
 
 ## Key Implementation Notes
 
-- `getCheckState()` in utils.ts is already correct for bottom-up/recursive visual state — no changes needed
+- `getCheckState()` remains the recursive aggregation helper; bottom-up needs a mode-aware helper so a directly checked intermediate node still counts as checked for its ancestors
 - TreeItem leaf checkbox rendering should switch from `item.checked` to `checkState` computed for consistency
 - The `handleCheckChange` in TreeView.vue is the core change: it must compute all affected nodes and emit per-node events
 - App.vue's `handleCheckChange` becomes simpler: just update the single reported node (no cascading logic needed)
@@ -34,5 +34,5 @@
 After implementation, verify each mode with the demo app:
 1. `independent`: check parent → only parent changes
 2. `top-down`: check parent → parent + all descendants change
-3. `bottom-up`: check all children → parent auto-checks; uncheck one child → parent becomes indeterminate
+3. `bottom-up`: check all children → parent auto-checks; uncheck one child → parent becomes indeterminate; check a mid-level node directly → descendants stay unchanged and ancestors react to that node's checked state
 4. `recursive`: check parent → cascades down; uncheck child → parent becomes indeterminate

@@ -21,14 +21,15 @@
 
 **Rationale**: Currently TreeItem checks `recursiveSelectRef.value` to decide between `getCheckState()` (recursive tri-state) and direct `item.checked` (binary). The new logic:
 - `'independent'` / `'top-down'`: Use direct `item.checked` (no indeterminate — parents don't react to children)
-- `'bottom-up'` / `'recursive'`: Use `getCheckState()` which already computes the tri-state from children
+- `'recursive'`: Use `getCheckState()` which computes the tri-state from descendants
+- `'bottom-up'`: Use a mode-aware helper that treats a directly checked folder as checked for its own ancestors, even when its descendants stay unchanged
 
 **Alternatives considered**:
-- **Separate computed per mode**: Overcomplicated; the existing `getCheckState()` already handles the recursive case correctly.
+- **Reuse `getCheckState()` for bottom-up**: Rejected because it ignores a folder's own `checked` flag once that folder has children, so directly checked mid-level nodes do not contribute to ancestor state.
 
 ## Decision 3: Bottom-up ancestor state computation
 
-**Decision**: When emitting bottom-up propagation events, compute projected ancestor states by walking up the tree and checking if all siblings (including the just-changed node) would be checked.
+**Decision**: When emitting bottom-up propagation events, compute projected ancestor states by walking up the tree and checking if all siblings (including the just-changed node) would be checked. A directly checked intermediate node counts as a checked sibling even if its descendants remain unchanged.
 
 **Rationale**: The component reads current state from `itemMap` and projects forward. For example, if a child is being checked and all its siblings are already checked, the parent should also be emitted as checked. This avoids timing issues since all events are computed synchronously before any consumer processing occurs.
 

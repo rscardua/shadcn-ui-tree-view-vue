@@ -28,7 +28,7 @@ import {
   TREE_SHOW_CHECKBOXES,
 } from './keys'
 import DropIndicator from './DropIndicator.vue'
-import { getCheckState, getItemPath, getSelectedChildrenCount, getVisibleItems } from './utils'
+import { getItemPath, getModeCheckState, getSelectedChildrenCount, getVisibleItems } from './utils'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import {
   ContextMenu,
@@ -88,22 +88,9 @@ const isOpen = computed(() => expandedIds.value.has(props.item.id))
 const isSelected = computed(() => enableSelection && selectedIds.value.has(props.item.id))
 const isFocused = computed(() => focusedId.value === props.item.id)
 
-const checkState = computed(() => {
-  const mode = checkModeRef.value
-  if (mode === 'recursive') {
-    return getCheckState(props.item, itemMap.value)
-  }
-  if (mode === 'bottom-up') {
-    const childDerived = getCheckState(props.item, itemMap.value)
-    if (childDerived !== 'unchecked') return childDerived
-    // Children are all unchecked — use the item's own checked property
-    // (parent may have been directly checked by the user)
-    const originalItem = itemMap.value.get(props.item.id)
-    return originalItem?.checked ? 'checked' : 'unchecked'
-  }
-  const originalItem = itemMap.value.get(props.item.id)
-  return originalItem?.checked ? 'checked' : 'unchecked'
-})
+const checkState = computed(() =>
+  getModeCheckState(props.item, itemMap.value, checkModeRef.value),
+)
 
 const selectedCount = computed(() => {
   if (!enableSelection) return null

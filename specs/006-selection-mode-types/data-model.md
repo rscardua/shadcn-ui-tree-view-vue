@@ -58,6 +58,8 @@ User unchecks child C → C.checked = false
   → parent visual state becomes indeterminate (if other siblings remain checked)
   → parent.checked = false (emitted if parent was previously checked)
 User checks parent P → P.checked = true (no descendants affected)
+User checks mid-level node M → M.checked = true (no descendants affected)
+  → Ancestors derive state using M as a checked child
 ```
 
 ### Recursive Mode

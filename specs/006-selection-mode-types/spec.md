@@ -54,6 +54,7 @@ A developer configures the tree-view with `mode: 'bottom-up'`. When a user check
 2. **Given** a tree with `mode: 'bottom-up'` and a fully checked parent (all children checked), **When** the user unchecks one child, **Then** the parent reflects a partial/indeterminate state.
 3. **Given** a tree with `mode: 'bottom-up'`, **When** the user checks a parent node, **Then** only the parent is checked; child nodes remain unchanged.
 4. **Given** a tree with `mode: 'bottom-up'` and deeply nested nodes, **When** all leaf nodes under a subtree become checked, **Then** the check state propagates upward through all ancestors.
+5. **Given** a tree with `mode: 'bottom-up'` and a mid-level node that has both ancestors and descendants, **When** the user checks that node directly, **Then** its descendants remain unchanged and its ancestors derive their state as if that mid-level node were a checked child.
 
 ---
 
@@ -80,12 +81,14 @@ A developer configures the tree-view with `mode: 'recursive'`. This combines top
 - What happens when a node has no children and `mode` is `'top-down'` or `'bottom-up'`? Behavior is identical to `'independent'` since there is no hierarchy to propagate through.
 - What happens when `mode` changes dynamically at runtime? The new mode should take effect immediately for subsequent interactions without altering existing check states.
 - What happens with the indeterminate checkbox visual state? In `'bottom-up'` and `'recursive'` modes, a parent whose children are partially checked should display an indeterminate state. In `'independent'` and `'top-down'` modes, there is no indeterminate state since parents don't react to children.
+- In `'bottom-up'` mode, how should a directly checked node with children affect its own ancestors? That node still counts as a checked child for ancestor aggregation, even though its descendants are unchanged.
 
 ## Clarifications
 
 ### Session 2026-04-08
 
 - Q: How should `check-change` events be emitted during propagation (e.g., top-down cascade)? → A: Emit `check-change` for every affected node (one event per node that changes state).
+- Q: In `bottom-up` mode, if a node with children is checked directly, should its ancestors treat that node as checked even when its descendants stay untouched? → A: Yes. A directly checked intermediate node counts as a checked child for ancestor aggregation, while its descendants remain unchanged.
 
 ## Requirements *(mandatory)*
 
@@ -96,7 +99,7 @@ A developer configures the tree-view with `mode: 'recursive'`. This combines top
 - **FR-003**: When `mode` is `'independent'` (or not specified), checking a node MUST only affect that specific node.
 - **FR-004**: When `mode` is `'top-down'`, checking or unchecking a parent MUST cascade the same action to all descendants.
 - **FR-005**: When `mode` is `'top-down'`, checking or unchecking a child MUST NOT affect any ancestor nodes.
-- **FR-006**: When `mode` is `'bottom-up'`, checking or unchecking a child MUST update ancestor states based on the combined state of all siblings.
+- **FR-006**: When `mode` is `'bottom-up'`, checking or unchecking any node that has an ancestor MUST update ancestor states based on the combined state of sibling nodes, including nodes that are themselves parents.
 - **FR-007**: When `mode` is `'bottom-up'`, checking or unchecking a parent MUST NOT cascade to descendant nodes.
 - **FR-008**: When `mode` is `'recursive'`, the component MUST combine top-down and bottom-up behaviors (bidirectional propagation).
 - **FR-009**: In modes that support upward propagation (`'bottom-up'` and `'recursive'`), parent nodes MUST display an indeterminate visual state when only some children are checked.

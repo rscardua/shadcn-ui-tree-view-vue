@@ -1,4 +1,4 @@
-import type { TreeViewItem } from './types'
+import type { SelectionMode, TreeViewItem } from './types'
 
 export function buildItemMap(items: TreeViewItem[]): Map<string, TreeViewItem> {
   const map = new Map<string, TreeViewItem>()
@@ -365,4 +365,42 @@ export function getCheckState(
   if (checkedCount === totalChildren) return 'checked'
   if (checkedCount > 0 || indeterminateCount > 0) return 'indeterminate'
   return 'unchecked'
+}
+
+export function getBottomUpCheckState(
+  item: TreeViewItem,
+  itemMap: Map<string, TreeViewItem>,
+): 'checked' | 'unchecked' | 'indeterminate' {
+  const originalItem = itemMap.get(item.id)
+  if (!originalItem) return 'unchecked'
+
+  if (!originalItem.children || originalItem.children.length === 0) {
+    return originalItem.checked ? 'checked' : 'unchecked'
+  }
+
+  const childStates = originalItem.children.map((child) =>
+    getBottomUpCheckState(child, itemMap),
+  )
+
+  const allChildrenChecked = childStates.every((state) => state === 'checked')
+  if (allChildrenChecked || originalItem.checked) return 'checked'
+  if (childStates.some((state) => state !== 'unchecked')) return 'indeterminate'
+  return 'unchecked'
+}
+
+export function getModeCheckState(
+  item: TreeViewItem,
+  itemMap: Map<string, TreeViewItem>,
+  mode: SelectionMode,
+): 'checked' | 'unchecked' | 'indeterminate' {
+  if (mode === 'bottom-up') {
+    return getBottomUpCheckState(item, itemMap)
+  }
+
+  if (mode === 'recursive') {
+    return getCheckState(item, itemMap)
+  }
+
+  const originalItem = itemMap.get(item.id)
+  return originalItem?.checked ? 'checked' : 'unchecked'
 }
