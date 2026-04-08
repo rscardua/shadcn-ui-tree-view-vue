@@ -207,15 +207,20 @@ function handleSelect(item: TreeViewItem, event: MouseEvent) {
 function handleCheckChange(item: TreeViewItem, checked: boolean) {
   const mode = props.mode ?? 'independent'
 
-  // Always emit for the clicked node
-  emit('check-change', item, checked)
+  // Collect all events before emitting to avoid synchronous emit timing issues.
+  // Vue 3's emit() is synchronous — the parent handler runs immediately, which can
+  // mutate treeData before getAffectedAncestors reads props.data/itemMap.
+  const events: { item: TreeViewItem; checked: boolean }[] = []
+
+  // Always collect the clicked node event
+  events.push({ item, checked })
 
   if (mode === 'top-down' || mode === 'recursive') {
     // Cascade to all descendants
     const descendants = getDescendants(item)
     for (const desc of descendants) {
       if (desc.checked !== checked) {
-        emit('check-change', desc, checked)
+        events.push({ item: desc, checked })
       }
     }
   }
@@ -225,7 +230,6 @@ function handleCheckChange(item: TreeViewItem, checked: boolean) {
     const pendingChanges = new Map<string, boolean>()
     pendingChanges.set(item.id, checked)
     if (mode === 'recursive') {
-      // Also account for descendants that were just cascaded
       const descendants = getDescendants(item)
       for (const desc of descendants) {
         pendingChanges.set(desc.id, checked)
@@ -233,8 +237,13 @@ function handleCheckChange(item: TreeViewItem, checked: boolean) {
     }
     const affectedAncestors = getAffectedAncestors(item, itemMap.value, props.data, checked, pendingChanges)
     for (const { item: ancestor, checked: ancestorChecked } of affectedAncestors) {
-      emit('check-change', ancestor, ancestorChecked)
+      events.push({ item: ancestor, checked: ancestorChecked })
     }
+  }
+
+  // Emit all events after computation is complete
+  for (const event of events) {
+    emit('check-change', event.item, event.checked)
   }
 }
 
