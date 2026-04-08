@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /d/projects/shadcn-ui-tree-view-vue -type f \\\\\\(-name *.css -o -name .gitignore -o -name next-env.d.ts \\\\\\))",
+      "Bash(find /d/projects/shadcn-ui-tree-view-vue -type d -not -path */node_modules/* -not -path */.next/*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/create-new-feature.ps1 \"Converter o projeto atual para funcionar com vuejs 3 mantendo as mesmas funcionalidades , mas usando as boas praticas indicadas no vue, confira na documentação mais recente do vue\" -Json -ShortName \"vue3-migration\" \"Migrate project to Vue 3\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/setup-plan.ps1 -Json)",
+      "WebFetch(domain:www.radix-vue.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:lucide.dev)",
+      "WebFetch(domain:www.shadcn-vue.com)",
+      "WebFetch(domain:reka-ui.com)",
+      "Bash(npm view:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/update-agent-context.ps1 -AgentType claude)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json)",
+      "Bash(npm create:*)",
+      "Bash(npx create-vue@latest vue --ts)",
+      "Bash(pnpm dlx:*)",
+      "Bash(cd:*)",
+      "Bash(npx shadcn-vue@latest add badge button checkbox collapsible context-menu dialog hover-card input scroll-area --overwrite)",
+      "Bash(COREPACK_ENABLE_STRICT=0 pnpm dlx shadcn-vue@latest add badge button checkbox collapsible context-menu dialog hover-card input scroll-area --yes)",
+      "Bash(COREPACK_ENABLE_STRICT=0 COREPACK_ENABLE_AUTO_PIN=0 npx -y shadcn-vue@latest add badge button checkbox collapsible context-menu dialog hover-card input scroll-area --yes --no-deps)",
+      "Bash(node -e \":*)",
+      "Bash(ls src/components/ui/*/index.ts)"
+    ]
+  }
+}

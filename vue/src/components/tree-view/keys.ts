@@ -1,0 +1,18 @@
+import type { ComputedRef, InjectionKey, Ref } from 'vue'
+import type { TreeViewIconMap, TreeViewItem, TreeViewMenuItem } from './types'
+
+export const TREE_SELECTED_IDS: InjectionKey<Ref<Set<string>>> = Symbol('TREE_SELECTED_IDS')
+export const TREE_EXPANDED_IDS: InjectionKey<Ref<Set<string>>> = Symbol('TREE_EXPANDED_IDS')
+export const TREE_FOCUSED_ID: InjectionKey<Ref<string | null>> = Symbol('TREE_FOCUSED_ID')
+export const TREE_ITEM_MAP: InjectionKey<ComputedRef<Map<string, TreeViewItem>>> = Symbol('TREE_ITEM_MAP')
+export const TREE_DATA: InjectionKey<Ref<TreeViewItem[]>> = Symbol('TREE_DATA')
+export const TREE_ON_SELECT: InjectionKey<(item: TreeViewItem, event: MouseEvent) => void> = Symbol('TREE_ON_SELECT')
+export const TREE_ON_TOGGLE: InjectionKey<(id: string, isOpen: boolean) => void> = Symbol('TREE_ON_TOGGLE')
+export const TREE_ON_CHECK: InjectionKey<(item: TreeViewItem, checked: boolean) => void> = Symbol('TREE_ON_CHECK')
+export const TREE_SHOW_CHECKBOXES: InjectionKey<boolean> = Symbol('TREE_SHOW_CHECKBOXES')
+export const TREE_ICON_MAP: InjectionKey<TreeViewIconMap> = Symbol('TREE_ICON_MAP')
+export const TREE_MENU_ITEMS: InjectionKey<TreeViewMenuItem[]> = Symbol('TREE_MENU_ITEMS')
+
+// Slot render functions (provided by TreeView, consumed by TreeItem recursively)
+export const TREE_ICON_SLOT: InjectionKey<((props: { item: TreeViewItem; depth: number }) => any) | null> = Symbol('TREE_ICON_SLOT')
+export const TREE_LABEL_SLOT: InjectionKey<((props: { item: TreeViewItem }) => any) | null> = Symbol('TREE_LABEL_SLOT')

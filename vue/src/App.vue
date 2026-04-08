@@ -1,0 +1,177 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import TreeView from '@/components/tree-view/TreeView.vue'
+import type { TreeViewItem, TreeViewMenuItem } from '@/components/tree-view/types'
+import { demoData } from '@/lib/demo-data'
+import { Globe, Folder, FolderOpen, File, Share2, Download, Trash2, Send } from '@lucide/vue'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+
+const treeData = ref<TreeViewItem[]>(JSON.parse(JSON.stringify(demoData)))
+const showRecap = ref(false)
+
+const customIconMap = {
+  region: Globe,
+  store: Folder,
+  department: FolderOpen,
+  item: File,
+}
+
+function getCheckedItems(items: TreeViewItem[]): TreeViewItem[] {
+  let checkedItems: TreeViewItem[] = []
+  items.forEach((item) => {
+    if (item.checked) {
+      checkedItems.push(item)
+    } else if (item.children) {
+      checkedItems = [...checkedItems, ...getCheckedItems(item.children)]
+    }
+  })
+  return checkedItems
+}
+
+function handleCheckChange(item: TreeViewItem, checked: boolean) {
+  const updateCheckState = (treeItems: TreeViewItem[]): TreeViewItem[] => {
+    return treeItems.map((currentItem) => {
+      if (currentItem.id === item.id) {
+        if (currentItem.children) {
+          return {
+            ...currentItem,
+            checked,
+            children: updateAllChildren(currentItem.children, checked),
+          }
+        }
+        return { ...currentItem, checked }
+      }
+      if (currentItem.children) {
+        return { ...currentItem, children: updateCheckState(currentItem.children) }
+      }
+      return currentItem
+    })
+  }
+
+  const updateAllChildren = (children: TreeViewItem[], checked: boolean): TreeViewItem[] => {
+    return children.map((child) => ({
+      ...child,
+      checked,
+      children: child.children ? updateAllChildren(child.children, checked) : undefined,
+    }))
+  }
+
+  treeData.value = updateCheckState(treeData.value)
+}
+
+function handleAction(action: string, items: TreeViewItem[]) {
+  if (action === 'add_to_shipment' && items.length > 0) {
+    items.forEach((i) => handleCheckChange(i, true))
+  }
+}
+
+const checkedItems = computed(() => getCheckedItems(treeData.value))
+
+const menuItems: TreeViewMenuItem[] = [
+  {
+    id: 'add_to_shipment',
+    label: 'Add to Shipment',
+    icon: Share2,
+    action: (items) => items.forEach((i) => handleCheckChange(i, true)),
+  },
+  {
+    id: 'download',
+    label: 'Download',
+    icon: Download,
+    action: (items) => console.log('Downloading:', items),
+  },
+  {
+    id: 'delete',
+    label: 'Delete',
+    icon: Trash2,
+    action: (items) => console.log('Deleting:', items),
+  },
+]
+</script>
+
+<template>
+  <div class="min-h-screen flex flex-col items-center bg-orange-300">
+    <div class="w-full max-w-[1400px] flex items-center justify-center p-8 gap-2">
+      <h1 class="text-2xl font-bold">Tree View - Vue 3 Demo</h1>
+    </div>
+
+    <main class="w-full max-w-[1400px] px-8 flex flex-row gap-4 min-h-[600px]">
+      <div class="flex flex-col gap-4 max-w-[450px]">
+        <TreeView
+          :data="treeData"
+          :icon-map="customIconMap"
+          :show-checkboxes="true"
+          :show-expand-all="true"
+          :menu-items="menuItems"
+          @check-change="handleCheckChange"
+          @action="handleAction"
+          @selection-change="(items) => {}"
+        />
+
+        <Button
+          v-if="checkedItems.length > 0"
+          class="w-full flex gap-2 items-center"
+          @click="showRecap = true"
+        >
+          <Send class="h-4 w-4" />
+          Send {{ checkedItems.length }} Items
+        </Button>
+      </div>
+
+      <div class="flex-1 bg-background p-6 rounded-xl border max-h-[555px] shadow-lg">
+        <h2 class="text-xl font-semibold mb-4">Checked Items</h2>
+        <div class="border rounded-lg p-4 bg-card font-mono text-sm h-[calc(100%-4rem)]">
+          <pre v-if="checkedItems.length > 0" class="whitespace-pre-wrap break-all overflow-auto max-h-full">{{ JSON.stringify(checkedItems.map((item) => ({ ...item, children: undefined })), null, 2) }}</pre>
+          <div v-else class="text-muted-foreground">No items checked</div>
+        </div>
+      </div>
+    </main>
+
+    <Dialog :open="showRecap" @update:open="(val) => showRecap = val">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Sending {{ checkedItems.length }} Items</DialogTitle>
+        </DialogHeader>
+
+        <ScrollArea class="max-h-[60vh] mt-4">
+          <div class="space-y-4">
+            <div
+              v-for="item in checkedItems"
+              :key="item.id"
+              class="flex items-center gap-2 p-2 border rounded-md"
+            >
+              <component :is="customIconMap[item.type as keyof typeof customIconMap]" class="h-4 w-4" />
+              <span>{{ item.name }}</span>
+              <span class="text-sm text-muted-foreground ml-auto">{{ item.type }}</span>
+            </div>
+          </div>
+        </ScrollArea>
+
+        <DialogFooter class="mt-4">
+          <Button variant="outline" @click="showRecap = false">Cancel</Button>
+          <Button @click="() => { console.log('Sending items:', checkedItems); showRecap = false }">
+            Confirm Send
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <footer class="w-full max-w-[1400px] flex items-center justify-center p-8">
+      <a
+        href="https://github.com/neigebaie/shadcn-ui-tree-view"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <p class="text-sm text-muted-foreground">Tree View - Vue 3 Demo by neigebaie.</p>
+      </a>
+    </footer>
+  </div>
+</template>
