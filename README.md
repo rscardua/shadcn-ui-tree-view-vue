@@ -1,135 +1,147 @@
 # Shadcn/ui Tree View (Vue)
 
-Componente Tree View em Vue 3 para interfaces administrativas, com busca, seleção avançada, checkboxes com modo recursivo opcional, menu de contexto e hover cards. Tecnologias principais: Vue 3, TypeScript, Reka UI e Tailwind CSS.
+Componente Tree View em Vue 3 para interfaces administrativas, com busca, selecao avancada, checkboxes com quatro modos de propagacao, menu de contexto, hover cards e drag and drop.
 
-## Captura / Demonstração
-
-> Observação: gere uma nova captura do demo em Vue em `http://localhost:5173` após a consolidação. A imagem antiga do projeto React foi removida de propósito.
+Este repositorio nao publica um pacote npm. O fluxo recomendado e o mesmo do `shadcn-vue`: copiar os arquivos do componente para o seu projeto e importar de `@/components/...`.
 
 ## Recursos
 
-- Renderização em árvore com expandir e recolher por nível
-- Seleção simples, múltipla, por intervalo e por arraste
+- Arvore com expandir e recolher por nivel
+- Selecao simples, multipla, por intervalo e por arraste
 - Busca e filtro em tempo real
-- Checkboxes com modo recursivo opcional (marcar pai marca todos os descendentes)
-- Menus de contexto por item
+- Checkboxes com modos `independent`, `top-down`, `bottom-up` e `recursive`
+- Menu de contexto por item
 - Hover cards com metadados do item
+- Drag and drop com suporte a reordenacao e reparenting
 
 ## Requisitos
 
-| Requisito | Versão |
+| Requisito | Versao |
 |-----------|--------|
 | Node.js | 20.19+ ou 22.12+ |
 | pnpm | 10+ |
 
-## Instalação
-
-### Opção A: Desenvolvimento (clonar e executar)
+## Desenvolvimento local
 
 ```bash
-git clone https://github.com/neigebaie/shadcn-ui-tree-view-vue.git
+git clone https://github.com/rscardua/shadcn-ui-tree-view-vue.git
 cd shadcn-ui-tree-view-vue/vue
 pnpm install
 pnpm dev
 ```
 
-O demo fica disponível em `http://localhost:5173`.
+O demo fica disponivel em `http://localhost:5173`.
 
-### Opção B: Copiar o componente (integração manual)
+## Usar em outro projeto
 
-1. Copie `vue/src/components/tree-view/` para `src/components/tree-view/` no projeto de destino.
-2. Copie ou recrie os componentes base usados pelo componente em `src/components/ui/`: `badge`, `button`, `checkbox`, `collapsible`, `context-menu`, `hover-card` e `input`.
-3. Copie `vue/src/lib/utils.ts` ou adapte a função `cn()` à convenção do seu projeto.
-4. Instale as dependências abaixo no projeto de destino:
+### Modelo de distribuicao
+
+Use este componente como os componentes do `shadcn-vue`: copie os arquivos fonte para dentro do seu app e importe localmente.
+
+### 1. Adicione com degit
+
+Forma recomendada:
 
 ```bash
-pnpm add @lucide/vue class-variance-authority clsx reka-ui tailwind-merge tw-animate-css
+npx degit rscardua/shadcn-ui-tree-view-vue/vue/src/components/tree-view src/components/ui/tree-view
 ```
 
-5. Garanta que o alias `@/` aponte para `src/`, ou ajuste os imports copiados.
-6. Antes de montar o Tree View, use um tema Tailwind/shadcn-vue compatível com os componentes acima.
+Observacao: o subdiretorio correto no repositorio e `vue/src/components/tree-view`. O caminho sem `vue/` nao existe neste projeto.
 
-## API do componente
+Se preferir, voce tambem pode copiar essa mesma pasta manualmente para o projeto de destino.
 
-### Propriedades (`TreeViewProps`)
+Estrutura esperada no projeto consumidor:
 
-| Propriedade | Tipo | Padrão | Descrição |
-|-------------|------|--------|-----------|
-| `data` | `TreeViewItem[]` | obrigatório | Estrutura hierárquica exibida pelo componente. |
-| `title` | `string \| undefined` | `undefined` | Reservado para uso futuro. |
-| `showExpandAll` | `boolean` | `true` | Exibe os botões de expandir e recolher tudo. |
-| `showCheckboxes` | `boolean` | `false` | Habilita checkboxes nos nós da árvore. |
-| `recursiveSelect` | `boolean` | `false` | Controla o modo de propagação dos checkboxes. Quando `false`, cada checkbox é independente — marcar/desmarcar um nó afeta apenas ele. Quando `true`, marcar/desmarcar um pai propaga para todos os descendentes, e o estado visual do pai reflete o estado agregado dos filhos (checked, unchecked ou indeterminado). |
-| `searchPlaceholder` | `string` | `"Search..."` | Texto exibido no campo de busca. |
-| `selectionText` | `string` | `"selected"` | Rótulo exibido ao lado da contagem de itens selecionados. |
-| `checkboxLabels` | `{ check: string; uncheck: string }` | `{ check: 'Check', uncheck: 'Uncheck' }` | Personaliza os botões de marcar e desmarcar na barra de seleção. |
-| `iconMap` | `TreeViewIconMap \| undefined` | `undefined` | Mapa opcional entre o tipo do item e o componente de ícone em Vue. |
-| `menuItems` | `TreeViewMenuItem[] \| undefined` | `undefined` | Ações exibidas no menu de contexto. |
-| `nodeActions` | `TreeViewNodeActionsMap \| undefined` | `undefined` | Mapa de botões de ação por tipo de nó (aparecem no hover). |
+```text
+src/
+  components/
+    ui/
+      tree-view/
+        composables/
+          useTreeDragDrop.ts
+        DropIndicator.vue
+        keys.ts
+        TreeItem.vue
+        TreeView.vue
+        types.ts
+        utils.ts
+```
 
-### Eventos (`TreeViewEmits`)
+### 2. Garanta as dependencias de UI
 
-| Evento | Payload | Descrição |
-|--------|---------|-----------|
-| `selection-change` | `TreeViewItem[]` | Disparado quando a seleção muda. |
-| `check-change` | `TreeViewItem`, `boolean` | Disparado quando um checkbox muda de estado. Com `recursiveSelect=true`, emitido para o pai e cada descendente individualmente. |
-| `action` | `string`, `TreeViewItem[]` | Disparado quando uma ação do menu de contexto é executada. |
-| `node-action` | `string`, `TreeViewItem` | Disparado quando um botão de ação de nó é clicado. |
+O Tree View usa componentes base no estilo `shadcn-vue`. Se o seu projeto ja usa `shadcn-vue`, confira se estes componentes existem:
 
-### Slots (`TreeViewSlots`)
+- `src/components/ui/badge`
+- `src/components/ui/button`
+- `src/components/ui/checkbox`
+- `src/components/ui/collapsible`
+- `src/components/ui/context-menu`
+- `src/components/ui/hover-card`
+- `src/components/ui/input`
+- `src/components/ui/tooltip`
 
-| Slot | Props do slot | Descrição |
-|------|---------------|-----------|
-| `icon` | `{ item: TreeViewItem; depth: number }` | Substitui o ícone padrão de cada item. |
-| `label` | `{ item: TreeViewItem }` | Substitui a renderização do rótulo do item. |
+Tambem e necessario ter `src/lib/utils.ts` com a funcao `cn()`.
 
-### Interfaces
+### 3. Instale as dependencias
+
+No projeto de destino:
+
+```bash
+pnpm add vue reka-ui @lucide/vue class-variance-authority clsx tailwind-merge tw-animate-css
+```
+
+### 4. Ajuste alias e estilos
+
+- Garanta que o alias `@/` aponte para `src/`
+- Mantenha o setup de Tailwind e do tema `shadcn-vue` no projeto
+- Se nao usar alias `@/`, ajuste os imports copiados
+
+### 5. Importe o componente
+
+Se voce usou o comando com destino em `src/components/ui/tree-view`, os imports ficam assim:
 
 ```ts
-import type { Component } from 'vue'
-
-export interface TreeViewItem {
-  id: string
-  name: string
-  type: string
-  children?: TreeViewItem[]
-  checked?: boolean
-}
-
-export interface TreeViewMenuItem {
-  id: string
-  label: string
-  icon?: Component
-  action: (items: TreeViewItem[]) => void
-}
-
-export type TreeViewIconMap = Record<string, Component | undefined>
+import TreeView from '@/components/ui/tree-view/TreeView.vue'
+import type {
+  SelectionMode,
+  TreeViewItem,
+  TreeViewMenuItem,
+  TreeViewNodeActionsMap,
+} from '@/components/ui/tree-view/types'
 ```
 
-## Exemplo de uso
+Se preferir mover a pasta para outro lugar, ajuste apenas o caminho do import.
 
-### Uso basico
+## Exemplo de integracao
+
+Este exemplo mostra o fluxo esperado em outro projeto: manter os dados no estado do app e apenas aplicar cada evento `check-change` emitido pelo componente.
 
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Download, File, Folder, FolderOpen, Globe } from '@lucide/vue'
-import TreeView from '@/components/tree-view/TreeView.vue'
-import type { TreeViewItem, TreeViewMenuItem } from '@/components/tree-view/types'
+import { Eye, File, Folder, FolderOpen, Globe, Pencil } from '@lucide/vue'
+import TreeView from '@/components/ui/tree-view/TreeView.vue'
+import type {
+  SelectionMode,
+  TreeViewItem,
+  TreeViewNodeActionsMap,
+} from '@/components/ui/tree-view/types'
+
+const mode = ref<SelectionMode>('recursive')
 
 const treeData = ref<TreeViewItem[]>([
   {
-    id: '1',
-    name: 'Brasil',
+    id: 'docs',
+    name: 'Documents',
     type: 'region',
     children: [
       {
-        id: '1.1',
-        name: 'Loja Centro',
+        id: 'reports',
+        name: 'Reports',
         type: 'store',
         children: [
-          { id: '1.1.1', name: 'Catálogo', type: 'department' },
-          { id: '1.1.2', name: 'Relatório.pdf', type: 'item' },
+          { id: 'q1', name: 'Q1.pdf', type: 'item' },
+          { id: 'q2', name: 'Q2.pdf', type: 'item' },
         ],
       },
     ],
@@ -143,90 +155,134 @@ const iconMap = {
   item: File,
 }
 
-const menuItems: TreeViewMenuItem[] = [
-  {
-    id: 'download',
-    label: 'Download',
-    icon: Download,
-    action: (items) => console.log('Baixando os itens', items),
-  },
-]
-
-function onSelectionChange(items: TreeViewItem[]) {
-  console.log('Selecionados', items)
+const nodeActions: TreeViewNodeActionsMap = {
+  store: [
+    { id: 'view', icon: Eye, tooltip: 'View folder' },
+    { id: 'rename', icon: Pencil, tooltip: 'Rename folder' },
+  ],
 }
 
-function onCheckChange(item: TreeViewItem, checked: boolean) {
-  console.log('Checkbox alterado', item.name, checked)
+function updateChecked(items: TreeViewItem[], targetId: string, checked: boolean): TreeViewItem[] {
+  return items.map((item) => {
+    if (item.id === targetId) {
+      return { ...item, checked }
+    }
+
+    if (item.children) {
+      return {
+        ...item,
+        children: updateChecked(item.children, targetId, checked),
+      }
+    }
+
+    return item
+  })
 }
-
-function onAction(action: string, items: TreeViewItem[]) {
-  console.log('Ação executada', action, items)
-}
-</script>
-
-<template>
-  <TreeView
-    :data="treeData"
-    :icon-map="iconMap"
-    :menu-items="menuItems"
-    :show-checkboxes="true"
-    :show-expand-all="true"
-    search-placeholder="Buscar itens..."
-    selection-text="selecionados"
-    :checkbox-labels="{ check: 'Marcar', uncheck: 'Desmarcar' }"
-    @selection-change="onSelectionChange"
-    @check-change="onCheckChange"
-    @action="onAction"
-  >
-    <template #label="{ item }">
-      <span>{{ item.name }}</span>
-    </template>
-  </TreeView>
-</template>
-```
-
-### Checkbox recursivo
-
-A prop `recursive-select` controla como os checkboxes se comportam:
-
-- **`false` (padrao)**: cada checkbox e independente. Marcar ou desmarcar um no afeta apenas ele. O estado visual do checkbox reflete diretamente o campo `checked` do item, sem considerar os filhos.
-- **`true`**: marcar/desmarcar um pai propaga para todos os descendentes. O estado visual do pai e calculado a partir dos filhos (checked se todos marcados, indeterminado se parcial, unchecked se nenhum).
-
-```vue
-<script setup lang="ts">
-import { ref } from 'vue'
-import TreeView from '@/components/tree-view/TreeView.vue'
-import type { TreeViewItem } from '@/components/tree-view/types'
-
-const recursiveSelect = ref(false)
-const treeData = ref<TreeViewItem[]>([/* ... */])
 
 function handleCheckChange(item: TreeViewItem, checked: boolean) {
-  // Atualiza apenas o item recebido no evento.
-  // Com recursiveSelect=true, o TreeView emite check-change
-  // para o pai E cada descendente individualmente,
-  // entao esta funcao e chamada uma vez por no afetado.
-  const update = (items: TreeViewItem[]): TreeViewItem[] =>
-    items.map((i) => {
-      if (i.id === item.id) return { ...i, checked }
-      return i.children ? { ...i, children: update(i.children) } : i
-    })
-  treeData.value = update(treeData.value)
+  treeData.value = updateChecked(treeData.value, item.id, checked)
 }
 </script>
 
 <template>
   <TreeView
     :data="treeData"
+    :mode="mode"
+    :icon-map="iconMap"
+    :node-actions="nodeActions"
     :show-checkboxes="true"
-    :recursive-select="recursiveSelect"
+    :show-expand-all="true"
+    :enable-selection="true"
     @check-change="handleCheckChange"
   />
 </template>
 ```
 
-## Ambiente de desenvolvimento
+## Modos de checkbox
+
+| Valor | Comportamento |
+|-------|----------------|
+| `independent` | Cada checkbox altera apenas o proprio no |
+| `top-down` | Marcar um pai propaga para todos os descendentes |
+| `bottom-up` | Os filhos influenciam os ancestrais, sem propagar para baixo |
+| `recursive` | Combina `top-down` e `bottom-up` |
+
+## API do componente
+
+### Props
+
+| Propriedade | Tipo | Padrao | Descricao |
+|-------------|------|--------|-----------|
+| `data` | `TreeViewItem[]` | obrigatorio | Estrutura hierarquica exibida pelo componente |
+| `showExpandAll` | `boolean` | `true` | Exibe os botoes de expandir e recolher tudo |
+| `showCheckboxes` | `boolean` | `false` | Habilita checkboxes nos nos |
+| `mode` | `SelectionMode` | `'independent'` | Define a estrategia de propagacao dos checkboxes |
+| `enableSelection` | `boolean` | `false` | Habilita selecao visual por clique, Ctrl, Shift e drag |
+| `enableDragDrop` | `boolean` | `false` | Habilita drag and drop |
+| `searchPlaceholder` | `string` | `'Search...'` | Placeholder do campo de busca |
+| `selectionText` | `string` | `'selected'` | Rotulo exibido na barra de selecao |
+| `checkboxLabels` | `{ check: string; uncheck: string }` | `{ check: 'Check', uncheck: 'Uncheck' }` | Personaliza os botoes da barra de selecao |
+| `iconMap` | `TreeViewIconMap` | `undefined` | Mapeia `type` para icones |
+| `menuItems` | `TreeViewMenuItem[]` | `undefined` | Itens do menu de contexto |
+| `nodeActions` | `TreeViewNodeActionsMap` | `undefined` | Acoes por tipo de no |
+
+### Eventos
+
+| Evento | Payload | Descricao |
+|--------|---------|-----------|
+| `selection-change` | `TreeViewItem[]` | Disparado quando a selecao visual muda |
+| `check-change` | `item: TreeViewItem`, `checked: boolean` | Disparado para cada no afetado por uma alteracao de checkbox |
+| `node-action` | `actionId: string`, `item: TreeViewItem` | Disparado quando uma acao de no e clicada |
+| `drop` | `TreeDragDropEvent` | Disparado ao concluir um drop |
+| `update:data` | `TreeViewItem[]` | Emite a arvore reordenada em operacoes de drag and drop |
+
+### Slots
+
+| Slot | Props | Descricao |
+|------|-------|-----------|
+| `icon` | `{ item: TreeViewItem; depth: number }` | Substitui o icone padrao |
+| `label` | `{ item: TreeViewItem }` | Substitui o rotulo do item |
+
+### Tipos principais
+
+```ts
+import type { Component } from 'vue'
+
+export type SelectionMode =
+  | 'independent'
+  | 'top-down'
+  | 'bottom-up'
+  | 'recursive'
+
+export interface TreeViewItem {
+  id: string
+  name: string
+  type: string
+  children?: TreeViewItem[]
+  checked?: boolean
+  draggable?: boolean
+  droppable?: boolean
+}
+
+export interface TreeViewMenuItem {
+  id: string
+  label: string
+  icon?: Component
+  action: (items: TreeViewItem[]) => void
+}
+
+export interface TreeDragDropEvent {
+  items: TreeViewItem[]
+  sourceParentId: string | null
+  targetParentId: string | null
+  targetId: string
+  zone: 'before' | 'after' | 'inside'
+  preventDefault: () => void
+  defaultPrevented: boolean
+}
+```
+
+## Scripts
 
 ```bash
 cd vue
@@ -236,14 +292,13 @@ pnpm build
 pnpm type-check
 ```
 
-## Contribuição
+## Contribuicao
 
-- Use o fluxo de planejamento descrito em `specs/` para novas funcionalidades.
-- Trabalhe somente dentro de `vue/` para código de produto e demo.
-- Mantenha um commit por unidade lógica de mudança.
-- Antes de abrir um PR, confirme que `cd vue && pnpm dev` e `cd vue && pnpm type-check` funcionam sem regressão.
+- Use o fluxo de planejamento em `specs/` para novas funcionalidades
+- Trabalhe dentro de `vue/` para codigo de produto e demo
+- Antes de abrir um PR, valide `cd vue && pnpm type-check` e `cd vue && pnpm build`
 
-## Créditos
+## Creditos
 
-- Projeto base original: [`neigebaie/shadcn-ui-tree-view`](https://github.com/neigebaie/shadcn-ui-tree-view).
-- Esta versão em Vue foi convertida com apoio de IA e segue com manutenção contínua neste fork pelos mantenedores atuais.
+- Projeto base original: [`neigebaie/shadcn-ui-tree-view`](https://github.com/neigebaie/shadcn-ui-tree-view)
+- Esta versao em Vue e mantida neste fork

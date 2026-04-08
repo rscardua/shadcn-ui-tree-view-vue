@@ -2,6 +2,7 @@
 vue/node_modules/
 vue/dist/
 vue/.vite/
+node_modules/
 
 # Shared environment and build metadata
 .env*
