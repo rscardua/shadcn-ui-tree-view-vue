@@ -17,6 +17,15 @@ export interface TreeViewMenuItem {
 
 export type TreeViewIconMap = Record<string, Component | undefined>
 
+export interface TreeViewNodeAction {
+  id: string
+  icon: Component
+  tooltip: string
+  action?: (item: TreeViewItem) => void
+}
+
+export type TreeViewNodeActionsMap = Record<string, TreeViewNodeAction[]>
+
 export interface TreeViewProps {
   data: TreeViewItem[]
   title?: string
@@ -30,4 +39,5 @@ export interface TreeViewProps {
   }
   iconMap?: TreeViewIconMap
   menuItems?: TreeViewMenuItem[]
+  nodeActions?: TreeViewNodeActionsMap
 }

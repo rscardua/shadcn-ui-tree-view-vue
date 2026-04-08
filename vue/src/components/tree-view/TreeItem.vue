@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import type { TreeViewItem } from './types'
+import type { TreeViewNodeAction } from './types'
 import {
   TREE_DATA,
   TREE_EXPANDED_IDS,
@@ -10,7 +11,9 @@ import {
   TREE_ITEM_MAP,
   TREE_LABEL_SLOT,
   TREE_MENU_ITEMS,
+  TREE_NODE_ACTIONS,
   TREE_ON_CHECK,
+  TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
   TREE_SELECTED_IDS,
@@ -29,6 +32,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -52,6 +61,8 @@ const onCheck = inject(TREE_ON_CHECK)!
 const showCheckboxes = inject(TREE_SHOW_CHECKBOXES, false)
 const iconMap = inject(TREE_ICON_MAP, {})
 const menuItems = inject(TREE_MENU_ITEMS, [])
+const nodeActionsMap = inject(TREE_NODE_ACTIONS, {})
+const onNodeAction = inject(TREE_ON_NODE_ACTION, undefined)
 const iconSlot = inject(TREE_ICON_SLOT, null)
 const labelSlot = inject(TREE_LABEL_SLOT, null)
 
@@ -67,6 +78,8 @@ const selectedCount = computed(() => {
   const count = getSelectedChildrenCount(props.item, selectedIds.value)
   return count > 0 ? count : null
 })
+
+const currentNodeActions = computed(() => nodeActionsMap[props.item.type] ?? [])
 
 const selectionStyle = computed(() => {
   if (!isSelected.value) return ''
@@ -112,6 +125,11 @@ function handleContextMenuAction(menuItemAction: (items: TreeViewItem[]) => void
   } else {
     menuItemAction([props.item])
   }
+}
+
+function handleNodeAction(action: TreeViewNodeAction) {
+  action.action?.(props.item)
+  onNodeAction?.(action.id, props.item)
 }
 
 function renderIcon() {
@@ -188,6 +206,28 @@ function renderIcon() {
                   {{ selectedCount }} selected
                 </Badge>
 
+                <!-- Node action buttons -->
+                <div v-if="currentNodeActions.length > 0" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <TooltipProvider v-for="nodeAction in currentNodeActions" :key="nodeAction.id">
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          class="h-6 w-6 p-0 items-center justify-center"
+                          :aria-label="nodeAction.tooltip"
+                          @click.stop="handleNodeAction(nodeAction)"
+                        >
+                          <component :is="nodeAction.icon" class="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {{ nodeAction.tooltip }}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
                 <!-- Hover card -->
                 <HoverCard>
                   <HoverCardTrigger as-child>
@@ -239,6 +279,28 @@ function renderIcon() {
                 <!-- Name -->
                 <component :is="() => labelSlot?.({ item })" v-if="labelSlot" />
                 <span v-else class="flex-1">{{ item.name }}</span>
+
+                <!-- Node action buttons -->
+                <div v-if="currentNodeActions.length > 0" class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <TooltipProvider v-for="nodeAction in currentNodeActions" :key="nodeAction.id">
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          class="h-6 w-6 p-0 items-center justify-center"
+                          :aria-label="nodeAction.tooltip"
+                          @click.stop="handleNodeAction(nodeAction)"
+                        >
+                          <component :is="nodeAction.icon" class="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {{ nodeAction.tooltip }}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
 
                 <!-- Hover card -->
                 <HoverCard>

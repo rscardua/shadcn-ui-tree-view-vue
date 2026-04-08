@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import TreeView from '@/components/tree-view/TreeView.vue'
-import type { TreeViewItem, TreeViewMenuItem } from '@/components/tree-view/types'
+import type { TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from '@/components/tree-view/types'
 import { demoData } from '@/lib/demo-data'
-import { Globe, Folder, FolderOpen, File, Share2, Download, Trash2, Send } from '@lucide/vue'
+import { Globe, Folder, FolderOpen, File, Share2, Download, Trash2, Send, Pencil, MapPin, Eye, Package } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -75,6 +75,22 @@ function handleAction(action: string, items: TreeViewItem[]) {
 
 const checkedItems = computed(() => getCheckedItems(treeData.value))
 
+const nodeActions: TreeViewNodeActionsMap = {
+  region: [
+    { id: 'view', icon: Eye, tooltip: 'View region details', action: (item) => console.log('View region:', item.name) },
+    { id: 'locate', icon: MapPin, tooltip: 'Locate on map' },
+  ],
+  store: [
+    { id: 'edit', icon: Pencil, tooltip: 'Edit store', action: (item) => console.log('Edit store:', item.name) },
+    { id: 'view', icon: Eye, tooltip: 'View store details' },
+    { id: 'delete', icon: Trash2, tooltip: 'Delete store' },
+  ],
+  item: [
+    { id: 'view', icon: Package, tooltip: 'View item details' },
+    { id: 'download', icon: Download, tooltip: 'Download item', action: (item) => console.log('Download:', item.name) },
+  ],
+}
+
 const menuItems: TreeViewMenuItem[] = [
   {
     id: 'add_to_shipment',
@@ -111,8 +127,10 @@ const menuItems: TreeViewMenuItem[] = [
           :show-checkboxes="true"
           :show-expand-all="true"
           :menu-items="menuItems"
+          :node-actions="nodeActions"
           @check-change="handleCheckChange"
           @action="handleAction"
+          @node-action="(actionId, item) => console.log('Node action:', actionId, 'on', item.name)"
           @selection-change="(items) => {}"
         />
 

@@ -1,5 +1,5 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
-import type { TreeViewIconMap, TreeViewItem, TreeViewMenuItem } from './types'
+import type { TreeViewIconMap, TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from './types'
 
 export const TREE_SELECTED_IDS: InjectionKey<Ref<Set<string>>> = Symbol('TREE_SELECTED_IDS')
 export const TREE_EXPANDED_IDS: InjectionKey<Ref<Set<string>>> = Symbol('TREE_EXPANDED_IDS')
@@ -12,6 +12,10 @@ export const TREE_ON_CHECK: InjectionKey<(item: TreeViewItem, checked: boolean) 
 export const TREE_SHOW_CHECKBOXES: InjectionKey<boolean> = Symbol('TREE_SHOW_CHECKBOXES')
 export const TREE_ICON_MAP: InjectionKey<TreeViewIconMap> = Symbol('TREE_ICON_MAP')
 export const TREE_MENU_ITEMS: InjectionKey<TreeViewMenuItem[]> = Symbol('TREE_MENU_ITEMS')
+
+// Node action buttons
+export const TREE_NODE_ACTIONS: InjectionKey<TreeViewNodeActionsMap> = Symbol('TREE_NODE_ACTIONS')
+export const TREE_ON_NODE_ACTION: InjectionKey<(actionId: string, item: TreeViewItem) => void> = Symbol('TREE_ON_NODE_ACTION')
 
 // Slot render functions (provided by TreeView, consumed by TreeItem recursively)
 export const TREE_ICON_SLOT: InjectionKey<((props: { item: TreeViewItem; depth: number }) => any) | null> = Symbol('TREE_ICON_SLOT')

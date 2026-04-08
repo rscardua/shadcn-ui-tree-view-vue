@@ -10,7 +10,9 @@ import {
   TREE_ITEM_MAP,
   TREE_LABEL_SLOT,
   TREE_MENU_ITEMS,
+  TREE_NODE_ACTIONS,
   TREE_ON_CHECK,
+  TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
   TREE_SELECTED_IDS,
@@ -35,6 +37,7 @@ const emit = defineEmits<{
   (e: 'selection-change', items: TreeViewItem[]): void
   (e: 'check-change', item: TreeViewItem, checked: boolean): void
   (e: 'action', action: string, items: TreeViewItem[]): void
+  (e: 'node-action', actionId: string, item: TreeViewItem): void
 }>()
 
 // State
@@ -378,6 +381,8 @@ provide(TREE_ON_CHECK, handleCheckChange)
 provide(TREE_SHOW_CHECKBOXES, props.showCheckboxes)
 provide(TREE_ICON_MAP, props.iconMap || {})
 provide(TREE_MENU_ITEMS, props.menuItems || [])
+provide(TREE_NODE_ACTIONS, props.nodeActions || {})
+provide(TREE_ON_NODE_ACTION, (actionId: string, item: TreeViewItem) => emit('node-action', actionId, item))
 
 // Provide slot render functions for recursive TreeItem usage
 const slots = useSlots()
