@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import TreeView from '@/components/tree-view/TreeView.vue'
-import type { TreeDragDropEvent, TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from '@/components/tree-view/types'
+import type { SelectionMode, TreeDragDropEvent, TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from '@/components/tree-view/types'
 import { demoData } from '@/lib/demo-data'
 import { Globe, Folder, FolderOpen, File, Share2, Download, Trash2, Send, Pencil, MapPin, Eye, Package } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 
 const treeData = ref<TreeViewItem[]>(JSON.parse(JSON.stringify(demoData)))
 const showRecap = ref(false)
-const recursiveSelect = ref(false)
+const selectionMode = ref<SelectionMode>('independent')
+const enableSelection = ref(false)
 const enableDragDrop = ref(false)
 const selectedItems = ref<TreeViewItem[]>([])
 const lastDropEvent = ref<{ items: string[]; target: string; zone: string } | null>(null)
@@ -38,24 +39,9 @@ function getCheckedItems(items: TreeViewItem[]): TreeViewItem[] {
 }
 
 function handleCheckChange(item: TreeViewItem, checked: boolean) {
-  const updateAllChildren = (children: TreeViewItem[], checked: boolean): TreeViewItem[] => {
-    return children.map((child) => ({
-      ...child,
-      checked,
-      children: child.children ? updateAllChildren(child.children, checked) : undefined,
-    }))
-  }
-
   const updateItem = (treeItems: TreeViewItem[]): TreeViewItem[] => {
     return treeItems.map((currentItem) => {
       if (currentItem.id === item.id) {
-        if (recursiveSelect.value && currentItem.children) {
-          return {
-            ...currentItem,
-            checked,
-            children: updateAllChildren(currentItem.children, checked),
-          }
-        }
         return { ...currentItem, checked }
       }
       if (currentItem.children) {
@@ -141,19 +127,32 @@ const menuItems: TreeViewMenuItem[] = [
       <div class="flex flex-col gap-4 min-w-0 flex-1">
         <div class="bg-background rounded-xl border p-4 shadow-lg space-y-3">
           <h2 class="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Options</h2>
+          <div class="space-y-1.5">
+            <div class="text-sm font-medium">Selection Mode</div>
+            <select
+              :value="selectionMode"
+              class="w-full rounded border border-input bg-background px-3 py-1.5 text-sm"
+              @change="selectionMode = ($event.target as HTMLSelectElement).value as SelectionMode"
+            >
+              <option value="independent">Independent — each node checked independently</option>
+              <option value="top-down">Top-Down — parent cascades to descendants</option>
+              <option value="bottom-up">Bottom-Up — children roll up to ancestors</option>
+              <option value="recursive">Recursive — bidirectional propagation</option>
+            </select>
+          </div>
           <label class="flex items-center gap-3 text-sm font-medium cursor-pointer select-none">
             <input
               type="checkbox"
-              :checked="recursiveSelect"
+              :checked="enableSelection"
               class="rounded border-input h-4 w-4"
-              @change="recursiveSelect = ($event.target as HTMLInputElement).checked"
+              @change="enableSelection = ($event.target as HTMLInputElement).checked"
             />
             <div>
-              <div>Recursive Select</div>
+              <div>Enable Selection</div>
               <div class="text-xs text-muted-foreground font-normal">
-                {{ recursiveSelect
-                  ? 'Checking a parent automatically checks all descendants'
-                  : 'Each node is checked independently'
+                {{ enableSelection
+                  ? 'Click, Ctrl+click, Shift+click, or drag to select items'
+                  : 'Item selection is disabled'
                 }}
               </div>
             </div>
@@ -178,12 +177,13 @@ const menuItems: TreeViewMenuItem[] = [
         </div>
 
         <TreeView
-          :key="String(enableDragDrop)"
+          :key="`${enableSelection}-${enableDragDrop}`"
           :data="treeData"
           :icon-map="customIconMap"
           :show-checkboxes="true"
           :show-expand-all="true"
-          :recursive-select="recursiveSelect"
+          :mode="selectionMode"
+          :enable-selection="enableSelection"
           :enable-drag-drop="enableDragDrop"
           :menu-items="menuItems"
           :node-actions="nodeActions"
@@ -206,7 +206,7 @@ const menuItems: TreeViewMenuItem[] = [
       </div>
 
       <div class="flex flex-col flex-1 gap-4">
-        <div class="bg-background p-6 rounded-xl border shadow-lg">
+        <div v-if="enableSelection" class="bg-background p-6 rounded-xl border shadow-lg">
           <h2 class="text-xl font-semibold mb-4">Selected Items</h2>
           <div class="border rounded-lg p-4 bg-card font-mono text-sm max-h-[220px] overflow-auto">
             <div v-if="selectedItems.length > 0" class="space-y-1">

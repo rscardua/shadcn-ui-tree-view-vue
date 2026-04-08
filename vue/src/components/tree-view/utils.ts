@@ -47,7 +47,6 @@ export function getItemPath(item: TreeViewItem, allItems: TreeViewItem[]): strin
 export function filterTree(
   items: TreeViewItem[],
   query: string,
-  expandedIds: Set<string>,
 ): { filtered: TreeViewItem[]; expandIds: Set<string> } {
   if (!query.trim()) {
     return { filtered: items, expandIds: new Set() }
@@ -296,6 +295,49 @@ export function moveMultipleNodes(
   }
 
   return removed.length > 0
+}
+
+export function getDescendants(item: TreeViewItem): TreeViewItem[] {
+  const result: TreeViewItem[] = []
+  const collect = (children: TreeViewItem[]) => {
+    for (const child of children) {
+      result.push(child)
+      if (child.children) collect(child.children)
+    }
+  }
+  if (item.children) collect(item.children)
+  return result
+}
+
+export function getAffectedAncestors(
+  item: TreeViewItem,
+  itemMap: Map<string, TreeViewItem>,
+  data: TreeViewItem[],
+  newCheckedValue: boolean,
+  pendingChanges: Map<string, boolean>,
+): { item: TreeViewItem; checked: boolean }[] {
+  const ancestors = findAncestors(item.id, data)
+  const result: { item: TreeViewItem; checked: boolean }[] = []
+
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const ancestor = ancestors[i]!
+    if (!ancestor.children) continue
+
+    const allChecked = ancestor.children.every((child) => {
+      if (pendingChanges.has(child.id)) return pendingChanges.get(child.id)
+      return child.checked === true
+    })
+
+    const newState = allChecked
+    const currentState = ancestor.checked === true
+
+    if (newState !== currentState) {
+      result.push({ item: ancestor, checked: newState })
+      pendingChanges.set(ancestor.id, newState)
+    }
+  }
+
+  return result
 }
 
 export function getCheckState(

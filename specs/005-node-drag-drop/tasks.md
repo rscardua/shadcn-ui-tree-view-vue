@@ -1,103 +1,91 @@
-# Tasks: Documento de Orientação de Uso para IA — TreeView Component
+# Tasks: Seleção de linha/elemento como propriedade configurável
 
-**Input**: Current component source code in `vue/src/components/tree-view/`
-**Prerequisites**: All component features implemented (selection, checkboxes, drag-drop, node actions, recursive select)
+**Input**: User request to make row/element selection a configurable prop (default: `false`)
+**Prerequisites**: Existing TreeView component with always-on selection behavior
 
-**Tests**: Not requested. Manual review of generated document.
+**Tests**: Not requested. Manual verification via demo app.
 
-**Organization**: Single deliverable — AI usage guide document inside the component directory.
+**Organization**: Single user story — add `enableSelection` prop gating all selection behavior.
 
 ---
 
 ## Phase 1: Setup
 
-**Purpose**: Analyze the complete component API surface before writing the guide
+**Purpose**: Add the new prop to the type system and injection key
 
-- [X] T001 [P] Read and catalog all exported types from `vue/src/components/tree-view/types.ts` (TreeViewItem, TreeViewProps, DropZone, TreeDragDropEvent, TreeViewMenuItem, TreeViewNodeAction, TreeViewNodeActionsMap, TreeViewIconMap)
-- [X] T002 [P] Read and catalog all injection keys from `vue/src/components/tree-view/keys.ts` (state keys, event handler keys, drag-drop keys, slot keys)
-- [X] T003 [P] Read and catalog all utility functions from `vue/src/components/tree-view/utils.ts` (buildItemMap, filterTree, getAllFolderIds, moveNode, moveMultipleNodes, findParentNode, etc.)
-- [X] T004 [P] Read and catalog composable API from `vue/src/components/tree-view/composables/useTreeDragDrop.ts` (options, return values, lifecycle)
-- [X] T005 [P] Read TreeView.vue props, emits, provide/inject setup, and keyboard handling
-- [X] T006 [P] Read TreeItem.vue injected state, drag integration, visual structure
-- [X] T007 [P] Read DropIndicator.vue props and rendering logic
-- [X] T008 [P] Read App.vue for real-world usage example patterns
+- [X] T001 [P] Add `enableSelection?: boolean` to `TreeViewProps` interface in `vue/src/components/tree-view/types.ts`
+- [X] T002 [P] Add `TREE_ENABLE_SELECTION` injection key (`InjectionKey<boolean>`) in `vue/src/components/tree-view/keys.ts`
 
 ---
 
-## Phase 2: Document Creation
+## Phase 2: Core — Gate selection behavior in TreeView.vue
 
-**Purpose**: Create the AI-oriented usage guide inside the component directory
+**Purpose**: Disable all selection logic when `enableSelection` is `false`
 
-- [ ] T009 Create `vue/src/components/tree-view/AI-GUIDE.md` with the following sections:
+**Scope in `vue/src/components/tree-view/TreeView.vue`**:
 
-  **Section 1 — Overview**: Brief component description, tech stack (Vue 3.5+, Composition API, `<script setup>`, TypeScript, Tailwind CSS v4, Reka UI), architecture pattern (provide/inject tree, composables for shared logic, recursive TreeItem SFC)
-
-  **Section 2 — File Structure**: Map of all files in the component directory with one-line descriptions of each file's role
-
-  **Section 3 — Data Model**: Complete `TreeViewItem` interface with all fields documented (id, name, type, children, checked, draggable, droppable). Explain the tree structure (recursive children array, in-place mutations for drag-drop)
-
-  **Section 4 — Component API (TreeView.vue)**: All props with types, defaults, and behavior descriptions. All emitted events with payload signatures. Slot API (icon slot, label slot). v-model:data support for drag-drop mutations
-
-  **Section 5 — Feature Flags**: How each boolean prop enables a feature set (showCheckboxes, recursiveSelect, enableDragDrop, showExpandAll) and interactions between them
-
-  **Section 6 — Drag & Drop**: How to enable drag-drop, the DropZone type (before/after/inside), the TreeDragDropEvent payload, how to cancel a drop via preventDefault(), per-node draggable/droppable restrictions, keyboard reordering (Alt+Arrow keys), and the composable architecture
-
-  **Section 7 — Node Actions**: How to define per-type action buttons via TreeViewNodeActionsMap, the action callback signature, and tooltip rendering
-
-  **Section 8 — Context Menu**: How to define menu items via TreeViewMenuItem[], action callbacks with selected items
-
-  **Section 9 — Selection & Checkboxes**: Click selection (single, Ctrl+click, Shift+click, drag-select), checkbox state management (check-change event, recursive select mode), getCheckState utility
-
-  **Section 10 — Injection Keys**: Complete list of injection keys from keys.ts with types and purpose — essential for any AI extending TreeItem or creating new child components
-
-  **Section 11 — Utility Functions**: All exported functions from utils.ts with signatures and use cases (tree traversal, mutation, filtering, state computation)
-
-  **Section 12 — Extending the Component**: Step-by-step patterns for common AI tasks:
-    - Adding a new prop to TreeView
-    - Adding a new event emission
-    - Adding a new injection key for child component communication
-    - Creating a new composable for shared logic
-    - Adding a new visual element to TreeItem
-    - Adding a new node-level feature (like draggable/droppable fields)
-
-  **Section 13 — Usage Example**: Annotated code snippet from App.vue showing all features wired together (data binding, icon map, checkboxes, drag-drop, node actions, context menu, event handlers)
-
-  **Section 14 — Common Pitfalls**: Key things an AI must know:
-    - TreeView uses provide/inject (NOT props) to communicate with TreeItem
-    - enableDragDrop requires `:key="String(enableDragDrop)"` for re-initialization
-    - Drag-drop mutates the data array in-place, then emits update:data
-    - TreeItem is recursive (renders itself for children)
-    - Checkbox state computation differs based on recursiveSelect mode
+- [X] T003 Add `enableSelection` to `withDefaults` with default value `false` in `vue/src/components/tree-view/TreeView.vue`
+- [X] T004 Guard `handleSelect` function: early-return when `enableSelection` is `false` (still allow folder expand/collapse on click, just skip the selection logic) in `vue/src/components/tree-view/TreeView.vue`
+- [X] T005 Guard drag-select: skip `handleMouseDown` and `handleMouseMove` selection logic when `enableSelection` is `false` in `vue/src/components/tree-view/TreeView.vue`
+- [X] T006 Guard click-away handler: skip `handleClickAway` registration (`onMounted`/`onUnmounted`) when `enableSelection` is `false` in `vue/src/components/tree-view/TreeView.vue`
+- [X] T007 Guard selection bar: wrap the `v-if="selectedIds.size > 0"` template block with an additional `enableSelection` check (so the selection bar never shows when disabled) in `vue/src/components/tree-view/TreeView.vue`
+- [X] T008 Guard keyboard Enter selection: skip `handleSelect` call in the `Enter` case of `handleKeyDown` when `enableSelection` is `false` in `vue/src/components/tree-view/TreeView.vue`
+- [X] T009 Guard `selection-change` watcher: skip emitting `selection-change` when `enableSelection` is `false` in `vue/src/components/tree-view/TreeView.vue`
+- [X] T010 Provide `TREE_ENABLE_SELECTION` via `provide(TREE_ENABLE_SELECTION, props.enableSelection)` in `vue/src/components/tree-view/TreeView.vue`
 
 ---
 
-## Phase 3: Validation
+## Phase 3: Core — Gate selection visuals in TreeItem.vue
 
-**Purpose**: Verify the document is accurate and complete
+**Purpose**: Remove selection highlight, count badges, and click behavior when selection is disabled
 
-- [ ] T010 Cross-reference AI-GUIDE.md against all component source files to verify no API surface is missing (props, events, types, utilities, injection keys)
-- [ ] T011 Run `pnpm type-check` and `pnpm build` to confirm no files were accidentally modified
+**Scope in `vue/src/components/tree-view/TreeItem.vue`**:
+
+- [X] T011 Inject `TREE_ENABLE_SELECTION` (default `false`) in `vue/src/components/tree-view/TreeItem.vue`
+- [X] T012 Guard `isSelected` computed: return `false` when `enableSelection` is `false` (disables orange highlight and `aria-selected`) in `vue/src/components/tree-view/TreeItem.vue`
+- [X] T013 Guard `selectedCount` computed: return `null` when `enableSelection` is `false` (hides the count badge on collapsed folders) in `vue/src/components/tree-view/TreeItem.vue`
+- [X] T014 Guard `handleClick`: when `enableSelection` is `false`, clicking a folder should only toggle expand/collapse (call `onToggle`), and clicking a leaf should be a no-op, in `vue/src/components/tree-view/TreeItem.vue`
+
+---
+
+## Phase 4: Demo — Update App.vue
+
+**Purpose**: Add toggle for `enableSelection` in the demo and wire it to the TreeView
+
+- [X] T015 Add `enableSelection` reactive ref (default `false`) and a toggle checkbox in the Options panel in `vue/src/App.vue`
+- [X] T016 Pass `:enable-selection="enableSelection"` to the `<TreeView>` component in `vue/src/App.vue`
+- [X] T017 Conditionally hide the "Selected Items" panel when `enableSelection` is `false` in `vue/src/App.vue`
+
+---
+
+## Phase 5: Validation
+
+- [X] T018 Run `pnpm type-check` and `pnpm build` to verify no type errors or build failures
+- [X] T019 Manual verification: confirm selection is disabled by default, and enabling the toggle activates click/drag/shift/ctrl selection
 
 ---
 
 ## Dependencies & Execution Order
 
-### Phase Dependencies
-
-- **Setup (Phase 1)**: No dependencies — all reads are parallel [P]
-- **Document Creation (Phase 2)**: Depends on Phase 1 — needs complete API catalog
-- **Validation (Phase 3)**: Depends on Phase 2
+- **Phase 1 (T001–T002)**: Parallel, no dependencies
+- **Phase 2 (T003–T010)**: Sequential, depends on Phase 1 (all in same file)
+- **Phase 3 (T011–T014)**: Sequential, depends on Phase 1 (T002 for injection key)
+- **Phase 4 (T015–T017)**: Depends on Phase 2 (needs the prop to exist)
+- **Phase 5 (T018–T019)**: Depends on all previous phases
 
 ### Parallel Opportunities
 
-- T001–T008 can ALL run in parallel (read-only operations on different files)
+- T001 and T002 can run in parallel (different files)
+- Phase 2 and Phase 3 can run in parallel (different files, both depend only on Phase 1)
 
 ---
 
 ## Notes
 
-- Total: 11 tasks across 3 phases
-- Phase 1 tasks (T001–T008) are already completed (catalog built from prior reads)
-- The deliverable is a single file: `vue/src/components/tree-view/AI-GUIDE.md`
-- The guide should be written in English for maximum AI compatibility
-- No automated tests — manual review of document accuracy
+- Total: 19 tasks across 5 phases
+- The `enableSelection` prop defaults to `false` as requested
+- When `enableSelection` is `false`: no click selection, no drag-select, no selection bar, no orange highlight, no selected count badges, no `selection-change` events
+- Folder expand/collapse via click MUST still work when selection is disabled
+- Keyboard navigation (ArrowUp/Down/Left/Right) MUST still work for focus — only Enter-to-select is gated
+- Checkboxes are independent of selection (controlled by `showCheckboxes`)
+- Drag-and-drop selection integration: when both `enableSelection` and `enableDragDrop` are true, multi-drag uses selected nodes; when `enableSelection` is false but `enableDragDrop` is true, only single-node drag works

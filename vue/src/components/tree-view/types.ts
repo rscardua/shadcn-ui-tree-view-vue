@@ -1,5 +1,7 @@
 import type { Component } from 'vue'
 
+export type SelectionMode = 'independent' | 'top-down' | 'bottom-up' | 'recursive'
+
 export interface TreeViewItem {
   id: string
   name: string
@@ -45,7 +47,8 @@ export interface TreeViewProps {
   title?: string
   showExpandAll?: boolean
   showCheckboxes?: boolean
-  recursiveSelect?: boolean
+  mode?: SelectionMode
+  enableSelection?: boolean
   enableDragDrop?: boolean
   searchPlaceholder?: string
   selectionText?: string

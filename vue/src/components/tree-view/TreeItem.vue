@@ -6,6 +6,7 @@ import {
   TREE_DATA,
   TREE_DRAG_STATE,
   TREE_ENABLE_DRAG_DROP,
+  TREE_ENABLE_SELECTION,
   TREE_EXPANDED_IDS,
   TREE_FOCUSED_ID,
   TREE_ICON_MAP,
@@ -22,7 +23,7 @@ import {
   TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
-  TREE_RECURSIVE_SELECT,
+  TREE_CHECK_MODE,
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
@@ -71,9 +72,10 @@ const iconMap = inject(TREE_ICON_MAP, {})
 const menuItems = inject(TREE_MENU_ITEMS, [])
 const nodeActionsMap = inject(TREE_NODE_ACTIONS, {})
 const onNodeAction = inject(TREE_ON_NODE_ACTION, undefined)
-const recursiveSelectRef = inject(TREE_RECURSIVE_SELECT, ref(false))
+const checkModeRef = inject(TREE_CHECK_MODE, ref('independent' as const))
 const iconSlot = inject(TREE_ICON_SLOT, null)
 const labelSlot = inject(TREE_LABEL_SLOT, null)
+const enableSelection = inject(TREE_ENABLE_SELECTION, false)
 const enableDragDrop = inject(TREE_ENABLE_DRAG_DROP, false)
 const dragState = inject(TREE_DRAG_STATE, undefined)
 const onDragStart = inject(TREE_ON_DRAG_START, undefined)
@@ -83,18 +85,28 @@ const onDragEnd = inject(TREE_ON_DRAG_END, undefined)
 
 // Computed
 const isOpen = computed(() => expandedIds.value.has(props.item.id))
-const isSelected = computed(() => selectedIds.value.has(props.item.id))
+const isSelected = computed(() => enableSelection && selectedIds.value.has(props.item.id))
 const isFocused = computed(() => focusedId.value === props.item.id)
 
 const checkState = computed(() => {
-  if (recursiveSelectRef.value) {
+  const mode = checkModeRef.value
+  if (mode === 'recursive') {
     return getCheckState(props.item, itemMap.value)
+  }
+  if (mode === 'bottom-up') {
+    const childDerived = getCheckState(props.item, itemMap.value)
+    if (childDerived !== 'unchecked') return childDerived
+    // Children are all unchecked — use the item's own checked property
+    // (parent may have been directly checked by the user)
+    const originalItem = itemMap.value.get(props.item.id)
+    return originalItem?.checked ? 'checked' : 'unchecked'
   }
   const originalItem = itemMap.value.get(props.item.id)
   return originalItem?.checked ? 'checked' : 'unchecked'
 })
 
 const selectedCount = computed(() => {
+  if (!enableSelection) return null
   if (!props.item.children || isOpen.value) return null
   const count = getSelectedChildrenCount(props.item, selectedIds.value)
   return count > 0 ? count : null
@@ -131,6 +143,13 @@ const itemPath = computed(() => getItemPath(props.item, data.value))
 function handleClick(e: MouseEvent) {
   e.stopPropagation()
   e.preventDefault()
+  if (!enableSelection) {
+    // When selection is disabled, clicking a folder toggles expand/collapse
+    if (props.item.children) {
+      onToggle(props.item.id, !isOpen.value)
+    }
+    return
+  }
   onSelect(props.item, e)
 }
 
@@ -305,12 +324,15 @@ function renderIcon() {
                   class="relative flex items-center justify-center w-4 h-4 cursor-pointer hover:opacity-80"
                   @click.stop="handleAccessClick"
                 >
-                  <div v-if="item.checked" class="w-4 h-4 border rounded bg-primary border-primary flex items-center justify-center">
+                  <div v-if="checkState === 'checked'" class="w-4 h-4 border rounded bg-primary border-primary flex items-center justify-center">
                     <svg class="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <div v-else class="w-4 h-4 border rounded border-input" />
+                  <div v-else-if="checkState === 'unchecked'" class="w-4 h-4 border rounded border-input" />
+                  <div v-else class="w-4 h-4 border rounded bg-primary border-primary flex items-center justify-center">
+                    <div class="h-0.5 w-2 bg-primary-foreground" />
+                  </div>
                 </div>
 
                 <!-- Icon -->

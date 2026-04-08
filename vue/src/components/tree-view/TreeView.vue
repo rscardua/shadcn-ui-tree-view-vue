@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, provide, ref, toRef, useSlots, watch } from 'vue'
-import type { TreeDragDropEvent, TreeViewItem, TreeViewProps } from './types'
+import type { SelectionMode, TreeDragDropEvent, TreeViewItem, TreeViewProps } from './types'
 import {
   TREE_DATA,
   TREE_DRAG_STATE,
   TREE_ENABLE_DRAG_DROP,
+  TREE_ENABLE_SELECTION,
   TREE_EXPANDED_IDS,
   TREE_FOCUSED_ID,
   TREE_ICON_MAP,
@@ -21,11 +22,11 @@ import {
   TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
-  TREE_RECURSIVE_SELECT,
+  TREE_CHECK_MODE,
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
-import { buildItemMap, filterTree, getAllFolderIds, getCheckState, getVisibleItems, moveNode } from './utils'
+import { buildItemMap, filterTree, getAffectedAncestors, getAllFolderIds, getCheckState, getDescendants, getVisibleItems, moveNode } from './utils'
 import { useTreeDragDrop } from './composables/useTreeDragDrop'
 import TreeItem from './TreeItem.vue'
 import { Button } from '@/components/ui/button'
@@ -36,7 +37,8 @@ import { cn } from '@/lib/utils'
 const props = withDefaults(defineProps<TreeViewProps>(), {
   showExpandAll: true,
   showCheckboxes: false,
-  recursiveSelect: false,
+  mode: 'independent',
+  enableSelection: false,
   enableDragDrop: false,
   searchPlaceholder: 'Search...',
   selectionText: 'selected',
@@ -84,7 +86,7 @@ const dragDrop = props.enableDragDrop
 const itemMap = computed(() => buildItemMap(props.data))
 
 const filteredResult = computed(() =>
-  filterTree(props.data, searchQuery.value, expandedIds.value),
+  filterTree(props.data, searchQuery.value),
 )
 
 const displayData = computed(() => filteredResult.value.filtered)
@@ -100,9 +102,11 @@ watch(
 )
 
 // Watch selectedIds to emit selection-change
-watch(selectedIds, () => {
-  emit('selection-change', getSelectedItems())
-}, { deep: true })
+if (props.enableSelection) {
+  watch(selectedIds, () => {
+    emit('selection-change', getSelectedItems())
+  }, { deep: true })
+}
 
 // Click-away handler
 function handleClickAway(e: MouseEvent) {
@@ -121,8 +125,10 @@ function handleClickAway(e: MouseEvent) {
 
 // Mount/unmount click-away
 import { onMounted, onUnmounted } from 'vue'
-onMounted(() => document.addEventListener('mousedown', handleClickAway))
-onUnmounted(() => document.removeEventListener('mousedown', handleClickAway))
+if (props.enableSelection) {
+  onMounted(() => document.addEventListener('mousedown', handleClickAway))
+  onUnmounted(() => document.removeEventListener('mousedown', handleClickAway))
+}
 
 // Expand/collapse handlers
 function handleExpandAll() {
@@ -145,6 +151,14 @@ function handleToggleExpand(id: string, isOpen: boolean) {
 
 // Selection handler
 function handleSelect(item: TreeViewItem, event: MouseEvent) {
+  if (!props.enableSelection) {
+    // When selection is disabled, clicking a folder still toggles expand/collapse
+    if (item.children) {
+      handleToggleExpand(item.id, !expandedIds.value.has(item.id))
+    }
+    return
+  }
+
   let newSelection = new Set(selectedIds.value)
 
   if (event.shiftKey && lastSelectedId.value !== null) {
@@ -191,7 +205,37 @@ function handleSelect(item: TreeViewItem, event: MouseEvent) {
 
 // Checkbox handler
 function handleCheckChange(item: TreeViewItem, checked: boolean) {
+  const mode = props.mode ?? 'independent'
+
+  // Always emit for the clicked node
   emit('check-change', item, checked)
+
+  if (mode === 'top-down' || mode === 'recursive') {
+    // Cascade to all descendants
+    const descendants = getDescendants(item)
+    for (const desc of descendants) {
+      if (desc.checked !== checked) {
+        emit('check-change', desc, checked)
+      }
+    }
+  }
+
+  if (mode === 'bottom-up' || mode === 'recursive') {
+    // Propagate upward to ancestors
+    const pendingChanges = new Map<string, boolean>()
+    pendingChanges.set(item.id, checked)
+    if (mode === 'recursive') {
+      // Also account for descendants that were just cascaded
+      const descendants = getDescendants(item)
+      for (const desc of descendants) {
+        pendingChanges.set(desc.id, checked)
+      }
+    }
+    const affectedAncestors = getAffectedAncestors(item, itemMap.value, props.data, checked, pendingChanges)
+    for (const { item: ancestor, checked: ancestorChecked } of affectedAncestors) {
+      emit('check-change', ancestor, ancestorChecked)
+    }
+  }
 }
 
 // Get selected items
@@ -219,6 +263,7 @@ function getEffectiveSelectedItems(): TreeViewItem[] {
 
 // Drag-select handlers
 function handleMouseDown(e: MouseEvent) {
+  if (!props.enableSelection) return
   if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return
   dragStartPosition.value = { x: e.clientX, y: e.clientY }
 }
@@ -346,9 +391,11 @@ function handleKeyDown(event: KeyboardEvent) {
       break
     }
     case 'Enter': {
-      const item = currentIndex >= 0 ? visible[currentIndex] : null
-      if (item) {
-        handleSelect(item, new MouseEvent('click'))
+      if (props.enableSelection) {
+        const item = currentIndex >= 0 ? visible[currentIndex] : null
+        if (item) {
+          handleSelect(item, new MouseEvent('click'))
+        }
       }
       break
     }
@@ -467,11 +514,18 @@ provide(TREE_ON_SELECT, handleSelect)
 provide(TREE_ON_TOGGLE, handleToggleExpand)
 provide(TREE_ON_CHECK, handleCheckChange)
 provide(TREE_SHOW_CHECKBOXES, props.showCheckboxes)
-provide(TREE_RECURSIVE_SELECT, toRef(props, 'recursiveSelect'))
+provide(TREE_CHECK_MODE, computed(() => {
+  const m = props.mode
+  if (m === 'independent' || m === 'top-down' || m === 'bottom-up' || m === 'recursive') return m
+  return 'independent'
+}))
 provide(TREE_ICON_MAP, props.iconMap || {})
 provide(TREE_MENU_ITEMS, props.menuItems || [])
 provide(TREE_NODE_ACTIONS, props.nodeActions || {})
 provide(TREE_ON_NODE_ACTION, (actionId: string, item: TreeViewItem) => emit('node-action', actionId, item))
+
+// Provide selection state
+provide(TREE_ENABLE_SELECTION, props.enableSelection)
 
 // Provide drag-drop state
 provide(TREE_ENABLE_DRAG_DROP, props.enableDragDrop)
@@ -508,7 +562,7 @@ function clearSelection() {
       <!-- Search bar / Selection bar -->
       <Transition mode="out-in" name="bar">
         <div
-          v-if="selectedIds.size > 0"
+          v-if="enableSelection && selectedIds.size > 0"
           key="selection"
           class="h-10 flex items-center justify-between bg-background rounded-lg border px-4"
         >
