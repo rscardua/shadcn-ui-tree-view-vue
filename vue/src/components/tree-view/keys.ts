@@ -1,5 +1,5 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
-import type { TreeViewIconMap, TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from './types'
+import type { DropZone, TreeViewIconMap, TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from './types'
 
 export const TREE_SELECTED_IDS: InjectionKey<Ref<Set<string>>> = Symbol('TREE_SELECTED_IDS')
 export const TREE_EXPANDED_IDS: InjectionKey<Ref<Set<string>>> = Symbol('TREE_EXPANDED_IDS')
@@ -23,3 +23,16 @@ export const TREE_RECURSIVE_SELECT: InjectionKey<Ref<boolean>> = Symbol('tree-re
 // Slot render functions (provided by TreeView, consumed by TreeItem recursively)
 export const TREE_ICON_SLOT: InjectionKey<((props: { item: TreeViewItem; depth: number }) => any) | null> = Symbol('TREE_ICON_SLOT')
 export const TREE_LABEL_SLOT: InjectionKey<((props: { item: TreeViewItem }) => any) | null> = Symbol('TREE_LABEL_SLOT')
+
+// Drag and drop
+export const TREE_ENABLE_DRAG_DROP: InjectionKey<boolean> = Symbol('TREE_ENABLE_DRAG_DROP')
+export const TREE_DRAG_STATE: InjectionKey<{
+  isDragging: Ref<boolean>
+  draggedIds: Ref<Set<string>>
+  dropTargetId: Ref<string | null>
+  dropZone: Ref<DropZone | null>
+}> = Symbol('TREE_DRAG_STATE')
+export const TREE_ON_DRAG_START: InjectionKey<(item: TreeViewItem, event: DragEvent) => void> = Symbol('TREE_ON_DRAG_START')
+export const TREE_ON_DRAG_OVER: InjectionKey<(item: TreeViewItem, event: DragEvent) => void> = Symbol('TREE_ON_DRAG_OVER')
+export const TREE_ON_DROP: InjectionKey<(item: TreeViewItem, event: DragEvent) => void> = Symbol('TREE_ON_DROP')
+export const TREE_ON_DRAG_END: InjectionKey<(event: DragEvent) => void> = Symbol('TREE_ON_DRAG_END')

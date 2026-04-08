@@ -167,6 +167,137 @@ export function getSelectionState(
   return 'unselected'
 }
 
+// --- Drag-drop tree mutation utilities ---
+
+export function findParentNode(
+  nodeId: string,
+  tree: TreeViewItem[],
+): { parent: TreeViewItem | null; siblings: TreeViewItem[] } {
+  for (const item of tree) {
+    if (item.children) {
+      if (item.children.some((c) => c.id === nodeId)) {
+        return { parent: item, siblings: item.children }
+      }
+      const found = findParentNode(nodeId, item.children)
+      if (found.siblings.length > 0) return found
+    }
+  }
+  // Node is at root level
+  if (tree.some((t) => t.id === nodeId)) {
+    return { parent: null, siblings: tree }
+  }
+  return { parent: null, siblings: [] }
+}
+
+export function removeNodeFromTree(tree: TreeViewItem[], nodeId: string): TreeViewItem | null {
+  for (let i = 0; i < tree.length; i++) {
+    if (tree[i]!.id === nodeId) {
+      return tree.splice(i, 1)[0]!
+    }
+    if (tree[i]!.children) {
+      const removed = removeNodeFromTree(tree[i]!.children!, nodeId)
+      if (removed) return removed
+    }
+  }
+  return null
+}
+
+export function insertNodeInTree(
+  tree: TreeViewItem[],
+  node: TreeViewItem,
+  targetId: string,
+  zone: 'before' | 'after' | 'inside',
+): boolean {
+  if (zone === 'inside') {
+    const findTarget = (items: TreeViewItem[]): boolean => {
+      for (const item of items) {
+        if (item.id === targetId) {
+          if (!item.children) item.children = []
+          item.children.push(node)
+          return true
+        }
+        if (item.children && findTarget(item.children)) return true
+      }
+      return false
+    }
+    return findTarget(tree)
+  }
+
+  // before or after
+  const insertInSiblings = (items: TreeViewItem[]): boolean => {
+    for (let i = 0; i < items.length; i++) {
+      if (items[i]!.id === targetId) {
+        const insertIndex = zone === 'before' ? i : i + 1
+        items.splice(insertIndex, 0, node)
+        return true
+      }
+      if (items[i]!.children && insertInSiblings(items[i]!.children!)) return true
+    }
+    return false
+  }
+  return insertInSiblings(tree)
+}
+
+export function moveNode(
+  tree: TreeViewItem[],
+  nodeId: string,
+  targetId: string,
+  zone: 'before' | 'after' | 'inside',
+): boolean {
+  const node = removeNodeFromTree(tree, nodeId)
+  if (!node) return false
+  return insertNodeInTree(tree, node, targetId, zone)
+}
+
+export function moveMultipleNodes(
+  tree: TreeViewItem[],
+  nodeIds: string[],
+  targetId: string,
+  zone: 'before' | 'after' | 'inside',
+): boolean {
+  // Filter out nodes whose ancestors are also selected
+  const idSet = new Set(nodeIds)
+  const filtered = nodeIds.filter((id) => {
+    const ancestors = findAncestors(id, tree)
+    return !ancestors.some((a) => idSet.has(a.id))
+  })
+
+  // Collect tree order for sorting
+  const orderMap = new Map<string, number>()
+  let order = 0
+  const walk = (items: TreeViewItem[]) => {
+    for (const item of items) {
+      orderMap.set(item.id, order++)
+      if (item.children) walk(item.children)
+    }
+  }
+  walk(tree)
+
+  filtered.sort((a, b) => (orderMap.get(a) ?? 0) - (orderMap.get(b) ?? 0))
+
+  // Remove all nodes
+  const removed: TreeViewItem[] = []
+  for (const id of filtered) {
+    const node = removeNodeFromTree(tree, id)
+    if (node) removed.push(node)
+  }
+
+  // Insert in reverse order for before/after to maintain relative order
+  if (zone === 'before' || zone === 'after') {
+    for (let i = removed.length - 1; i >= 0; i--) {
+      insertNodeInTree(tree, removed[i]!, targetId, zone === 'after' && i < removed.length - 1 ? 'after' : zone)
+      // After first insert for 'after', remaining should go 'after' the previous
+    }
+  } else {
+    // inside: push in order
+    for (const node of removed) {
+      insertNodeInTree(tree, node, targetId, zone)
+    }
+  }
+
+  return removed.length > 0
+}
+
 export function getCheckState(
   item: TreeViewItem,
   itemMap: Map<string, TreeViewItem>,

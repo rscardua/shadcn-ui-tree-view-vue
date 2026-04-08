@@ -55,6 +55,26 @@ export const demoData: TreeViewItem[] = [
     ],
   },
   {
+    id: 'locked',
+    name: 'Locked Section (not draggable)',
+    type: 'region',
+    draggable: false,
+    children: [
+      { id: 'locked-item-1', name: 'Protected Item 1', type: 'item', draggable: false },
+      { id: 'locked-item-2', name: 'Protected Item 2', type: 'item', draggable: false },
+    ],
+  },
+  {
+    id: 'readonly-folder',
+    name: 'Read-only Folder (no drops inside)',
+    type: 'region',
+    droppable: false,
+    children: [
+      { id: 'readonly-item-1', name: 'Existing Item A', type: 'item' },
+      { id: 'readonly-item-2', name: 'Existing Item B', type: 'item' },
+    ],
+  },
+  {
     id: 'math',
     name: 'Mathematics',
     type: 'region',

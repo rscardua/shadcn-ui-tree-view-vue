@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import TreeView from '@/components/tree-view/TreeView.vue'
-import type { TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from '@/components/tree-view/types'
+import type { TreeDragDropEvent, TreeViewItem, TreeViewMenuItem, TreeViewNodeActionsMap } from '@/components/tree-view/types'
 import { demoData } from '@/lib/demo-data'
 import { Globe, Folder, FolderOpen, File, Share2, Download, Trash2, Send, Pencil, MapPin, Eye, Package } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 const treeData = ref<TreeViewItem[]>(JSON.parse(JSON.stringify(demoData)))
 const showRecap = ref(false)
 const recursiveSelect = ref(false)
+const enableDragDrop = ref(false)
 const selectedItems = ref<TreeViewItem[]>([])
+const lastDropEvent = ref<{ items: string[]; target: string; zone: string } | null>(null)
 
 const customIconMap = {
   region: Globe,
@@ -74,6 +76,19 @@ function handleAction(action: string, items: TreeViewItem[]) {
 
 function handleSelectionChange(items: TreeViewItem[]) {
   selectedItems.value = items
+}
+
+function handleDrop(event: TreeDragDropEvent) {
+  lastDropEvent.value = {
+    items: event.items.map((i) => i.name),
+    target: event.targetId,
+    zone: event.zone,
+  }
+  console.log('Drop event:', event)
+}
+
+function handleUpdateData(data: TreeViewItem[]) {
+  treeData.value = [...data]
 }
 
 const checkedItems = computed(() => getCheckedItems(treeData.value))
@@ -143,20 +158,41 @@ const menuItems: TreeViewMenuItem[] = [
               </div>
             </div>
           </label>
+          <label class="flex items-center gap-3 text-sm font-medium cursor-pointer select-none">
+            <input
+              type="checkbox"
+              :checked="enableDragDrop"
+              class="rounded border-input h-4 w-4"
+              @change="enableDragDrop = ($event.target as HTMLInputElement).checked"
+            />
+            <div>
+              <div>Drag &amp; Drop</div>
+              <div class="text-xs text-muted-foreground font-normal">
+                {{ enableDragDrop
+                  ? 'Drag nodes to reorder or reparent. Alt+Arrow keys to move via keyboard.'
+                  : 'Drag-and-drop is disabled'
+                }}
+              </div>
+            </div>
+          </label>
         </div>
 
         <TreeView
+          :key="String(enableDragDrop)"
           :data="treeData"
           :icon-map="customIconMap"
           :show-checkboxes="true"
           :show-expand-all="true"
           :recursive-select="recursiveSelect"
+          :enable-drag-drop="enableDragDrop"
           :menu-items="menuItems"
           :node-actions="nodeActions"
           @check-change="handleCheckChange"
           @action="handleAction"
           @node-action="(actionId, item) => console.log('Node action:', actionId, 'on', item.name)"
           @selection-change="handleSelectionChange"
+          @drop="handleDrop"
+          @update:data="handleUpdateData"
         />
 
         <Button
@@ -185,6 +221,13 @@ const menuItems: TreeViewMenuItem[] = [
               </div>
             </div>
             <div v-else class="text-muted-foreground">No items selected</div>
+          </div>
+        </div>
+
+        <div v-if="lastDropEvent" class="bg-background p-6 rounded-xl border shadow-lg">
+          <h2 class="text-xl font-semibold mb-4">Last Drop Event</h2>
+          <div class="border rounded-lg p-4 bg-card font-mono text-sm">
+            <pre class="whitespace-pre-wrap break-all">{{ JSON.stringify(lastDropEvent, null, 2) }}</pre>
           </div>
         </div>
 

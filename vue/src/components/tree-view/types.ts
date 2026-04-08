@@ -6,6 +6,20 @@ export interface TreeViewItem {
   type: string
   children?: TreeViewItem[]
   checked?: boolean
+  draggable?: boolean
+  droppable?: boolean
+}
+
+export type DropZone = 'before' | 'after' | 'inside'
+
+export interface TreeDragDropEvent {
+  items: TreeViewItem[]
+  sourceParentId: string | null
+  targetParentId: string | null
+  targetId: string
+  zone: DropZone
+  preventDefault: () => void
+  defaultPrevented: boolean
 }
 
 export interface TreeViewMenuItem {
@@ -32,6 +46,7 @@ export interface TreeViewProps {
   showExpandAll?: boolean
   showCheckboxes?: boolean
   recursiveSelect?: boolean
+  enableDragDrop?: boolean
   searchPlaceholder?: string
   selectionText?: string
   checkboxLabels?: {

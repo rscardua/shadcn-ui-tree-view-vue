@@ -4,6 +4,8 @@ import type { TreeViewItem } from './types'
 import type { TreeViewNodeAction } from './types'
 import {
   TREE_DATA,
+  TREE_DRAG_STATE,
+  TREE_ENABLE_DRAG_DROP,
   TREE_EXPANDED_IDS,
   TREE_FOCUSED_ID,
   TREE_ICON_MAP,
@@ -13,6 +15,10 @@ import {
   TREE_MENU_ITEMS,
   TREE_NODE_ACTIONS,
   TREE_ON_CHECK,
+  TREE_ON_DRAG_END,
+  TREE_ON_DRAG_OVER,
+  TREE_ON_DRAG_START,
+  TREE_ON_DROP,
   TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
@@ -20,6 +26,7 @@ import {
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
+import DropIndicator from './DropIndicator.vue'
 import { getCheckState, getItemPath, getSelectedChildrenCount, getVisibleItems } from './utils'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import {
@@ -67,6 +74,12 @@ const onNodeAction = inject(TREE_ON_NODE_ACTION, undefined)
 const recursiveSelectRef = inject(TREE_RECURSIVE_SELECT, ref(false))
 const iconSlot = inject(TREE_ICON_SLOT, null)
 const labelSlot = inject(TREE_LABEL_SLOT, null)
+const enableDragDrop = inject(TREE_ENABLE_DRAG_DROP, false)
+const dragState = inject(TREE_DRAG_STATE, undefined)
+const onDragStart = inject(TREE_ON_DRAG_START, undefined)
+const onDragOver = inject(TREE_ON_DRAG_OVER, undefined)
+const onDropHandler = inject(TREE_ON_DROP, undefined)
+const onDragEnd = inject(TREE_ON_DRAG_END, undefined)
 
 // Computed
 const isOpen = computed(() => expandedIds.value.has(props.item.id))
@@ -88,6 +101,12 @@ const selectedCount = computed(() => {
 })
 
 const currentNodeActions = computed(() => nodeActionsMap[props.item.type] ?? [])
+
+// Drag-drop computed
+const isDraggable = computed(() => enableDragDrop && props.item.draggable !== false)
+const isBeingDragged = computed(() => dragState?.draggedIds.value.has(props.item.id) ?? false)
+const isDropTarget = computed(() => dragState?.dropTargetId.value === props.item.id)
+const currentDropZone = computed(() => isDropTarget.value ? dragState?.dropZone.value ?? null : null)
 
 const selectionStyle = computed(() => {
   if (!isSelected.value) return ''
@@ -159,14 +178,28 @@ function renderIcon() {
           :aria-expanded="item.children ? isOpen : undefined"
           :aria-selected="isSelected"
           :aria-checked="showCheckboxes ? (checkState === 'indeterminate' ? 'mixed' : checkState === 'checked') : undefined"
+          :aria-grabbed="enableDragDrop ? isBeingDragged : undefined"
+          :aria-dropeffect="enableDragDrop && isDropTarget ? 'move' : undefined"
+          :draggable="isDraggable"
           :tabindex="isFocused ? 0 : -1"
           :class="cn(
-            'select-none cursor-pointer px-1',
+            'select-none cursor-pointer px-1 relative',
             isSelected ? `bg-orange-100 ${selectionStyle}` : 'text-foreground',
+            isBeingDragged && 'opacity-40',
+            enableDragDrop && !isBeingDragged && 'cursor-grab',
+            isDropTarget && currentDropZone === 'inside' && 'bg-blue-50 ring-2 ring-blue-400 ring-inset rounded',
           )"
           :style="{ paddingLeft: `${depth * 20}px` }"
           @click="handleClick"
+          @dragstart="onDragStart?.($props.item, $event)"
+          @dragover="onDragOver?.($props.item, $event)"
+          @drop="onDropHandler?.($props.item, $event)"
+          @dragend="onDragEnd?.($event)"
         >
+          <!-- Drop indicators -->
+          <DropIndicator v-if="isDropTarget && currentDropZone === 'before'" zone="before" :depth="depth" />
+          <DropIndicator v-if="isDropTarget && currentDropZone === 'after'" zone="after" :depth="depth" />
+
           <div class="flex items-center min-h-8">
             <!-- Folder item -->
             <template v-if="item.children">

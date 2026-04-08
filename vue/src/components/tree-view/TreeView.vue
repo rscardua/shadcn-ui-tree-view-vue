@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, provide, ref, toRef, useSlots, watch } from 'vue'
-import type { TreeViewItem, TreeViewProps } from './types'
+import type { TreeDragDropEvent, TreeViewItem, TreeViewProps } from './types'
 import {
   TREE_DATA,
+  TREE_DRAG_STATE,
+  TREE_ENABLE_DRAG_DROP,
   TREE_EXPANDED_IDS,
   TREE_FOCUSED_ID,
   TREE_ICON_MAP,
@@ -12,6 +14,10 @@ import {
   TREE_MENU_ITEMS,
   TREE_NODE_ACTIONS,
   TREE_ON_CHECK,
+  TREE_ON_DRAG_END,
+  TREE_ON_DRAG_OVER,
+  TREE_ON_DRAG_START,
+  TREE_ON_DROP,
   TREE_ON_NODE_ACTION,
   TREE_ON_SELECT,
   TREE_ON_TOGGLE,
@@ -19,7 +25,8 @@ import {
   TREE_SELECTED_IDS,
   TREE_SHOW_CHECKBOXES,
 } from './keys'
-import { buildItemMap, filterTree, getAllFolderIds, getCheckState, getVisibleItems } from './utils'
+import { buildItemMap, filterTree, getAllFolderIds, getCheckState, getVisibleItems, moveNode } from './utils'
+import { useTreeDragDrop } from './composables/useTreeDragDrop'
 import TreeItem from './TreeItem.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +37,7 @@ const props = withDefaults(defineProps<TreeViewProps>(), {
   showExpandAll: true,
   showCheckboxes: false,
   recursiveSelect: false,
+  enableDragDrop: false,
   searchPlaceholder: 'Search...',
   selectionText: 'selected',
   checkboxLabels: () => ({ check: 'Check', uncheck: 'Uncheck' }),
@@ -40,6 +48,8 @@ const emit = defineEmits<{
   (e: 'check-change', item: TreeViewItem, checked: boolean): void
   (e: 'action', action: string, items: TreeViewItem[]): void
   (e: 'node-action', actionId: string, item: TreeViewItem): void
+  (e: 'drop', event: TreeDragDropEvent): void
+  (e: 'update:data', data: TreeViewItem[]): void
 }>()
 
 // State
@@ -57,6 +67,18 @@ const dragStartY = ref<number | null>(null)
 const dragStartPosition = ref<{ x: number; y: number } | null>(null)
 const currentMouseY = ref(0)
 const DRAG_THRESHOLD = 10
+
+// Drag-drop composable
+const dataRef = toRef(props, 'data')
+const dragDrop = props.enableDragDrop
+  ? useTreeDragDrop({
+      data: dataRef,
+      selectedIds,
+      expandedIds,
+      onDrop: (event) => emit('drop', event),
+      onUpdateData: (d) => emit('update:data', d),
+    })
+  : null
 
 // Computed
 const itemMap = computed(() => buildItemMap(props.data))
@@ -345,7 +367,71 @@ function handleKeyDown(event: KeyboardEvent) {
       focusedId.value = visible[visible.length - 1]!.id
       break
     default:
-      handled = false
+      // Keyboard reordering with Alt+Arrow when drag-drop is enabled
+      if (props.enableDragDrop && event.altKey) {
+        const item = currentIndex >= 0 ? visible[currentIndex] : null
+        if (item) {
+          switch (event.key) {
+            case 'ArrowUp': {
+              // Move focused node up within siblings
+              const parentInfo = findParentItem(item.id, props.data)
+              const siblings = parentInfo
+                ? parentInfo.children ?? []
+                : props.data
+              const idx = siblings.findIndex((s) => s.id === item.id)
+              if (idx > 0) {
+                const prevSibling = siblings[idx - 1]!
+                moveNode(props.data, item.id, prevSibling.id, 'before')
+                emit('update:data', props.data)
+              }
+              break
+            }
+            case 'ArrowDown': {
+              const parentInfo = findParentItem(item.id, props.data)
+              const siblings = parentInfo
+                ? parentInfo.children ?? []
+                : props.data
+              const idx = siblings.findIndex((s) => s.id === item.id)
+              if (idx < siblings.length - 1) {
+                const nextSibling = siblings[idx + 1]!
+                moveNode(props.data, item.id, nextSibling.id, 'after')
+                emit('update:data', props.data)
+              }
+              break
+            }
+            case 'ArrowLeft': {
+              // Promote: move to parent's level after parent
+              const parent = findParentItem(item.id, props.data)
+              if (parent) {
+                moveNode(props.data, item.id, parent.id, 'after')
+                emit('update:data', props.data)
+              }
+              break
+            }
+            case 'ArrowRight': {
+              // Demote: move into previous sibling as last child
+              const parentInfo = findParentItem(item.id, props.data)
+              const siblings = parentInfo
+                ? parentInfo.children ?? []
+                : props.data
+              const idx = siblings.findIndex((s) => s.id === item.id)
+              if (idx > 0) {
+                const prevSibling = siblings[idx - 1]!
+                moveNode(props.data, item.id, prevSibling.id, 'inside')
+                expandedIds.value = new Set([...expandedIds.value, prevSibling.id])
+                emit('update:data', props.data)
+              }
+              break
+            }
+            default:
+              handled = false
+          }
+        } else {
+          handled = false
+        }
+      } else {
+        handled = false
+      }
   }
 
   if (handled) {
@@ -386,6 +472,21 @@ provide(TREE_ICON_MAP, props.iconMap || {})
 provide(TREE_MENU_ITEMS, props.menuItems || [])
 provide(TREE_NODE_ACTIONS, props.nodeActions || {})
 provide(TREE_ON_NODE_ACTION, (actionId: string, item: TreeViewItem) => emit('node-action', actionId, item))
+
+// Provide drag-drop state
+provide(TREE_ENABLE_DRAG_DROP, props.enableDragDrop)
+if (dragDrop) {
+  provide(TREE_DRAG_STATE, {
+    isDragging: dragDrop.isDragging,
+    draggedIds: dragDrop.draggedIds,
+    dropTargetId: dragDrop.dropTargetId,
+    dropZone: dragDrop.dropZone,
+  })
+  provide(TREE_ON_DRAG_START, dragDrop.handleDragStart)
+  provide(TREE_ON_DRAG_OVER, dragDrop.handleDragOver)
+  provide(TREE_ON_DROP, dragDrop.handleDrop)
+  provide(TREE_ON_DRAG_END, dragDrop.handleDragEnd)
+}
 
 // Provide slot render functions for recursive TreeItem usage
 const slots = useSlots()
@@ -481,6 +582,7 @@ function clearSelection() {
         ref="dragRef"
         role="tree"
         aria-label="Tree view"
+        :aria-roledescription="enableDragDrop ? 'sortable' : undefined"
         class="rounded-lg bg-card relative select-none"
         :tabindex="0"
         @mousedown="handleMouseDown"
