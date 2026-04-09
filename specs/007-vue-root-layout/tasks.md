@@ -100,7 +100,7 @@
 - [X] T021 Regenerate Codex agent metadata by running `.specify/scripts/powershell/update-agent-context.ps1 -AgentType codex` after `specs/007-vue-root-layout/plan.md` reflects the root workspace
 - [X] T022 Search for stale root-layout regressions with `rg -n "cd vue|vue/src|/vue\\b" README.md AGENTS.md CLAUDE.md docs .github .specify/memory` and resolve any non-historical matches
 - [X] T023 Run final smoke validation from repository root using `pnpm dev`, `pnpm type-check`, and `pnpm build`, then confirm the `README.md` commands match the working flow
-- [ ] T024 Commit the root-layout migration for `package.json`, `src/`, `public/`, `README.md`, `AGENTS.md`, and `CLAUDE.md` as one feature-complete change
+- [X] T024 Commit the root-layout migration for `package.json`, `src/`, `public/`, `README.md`, `AGENTS.md`, and `CLAUDE.md` as one feature-complete change
 
 ---
 
